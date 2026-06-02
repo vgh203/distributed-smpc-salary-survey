@@ -1,7 +1,7 @@
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
-
+const axios = require("axios");
 const app = express();
 
 app.use(express.json());
@@ -29,4 +29,47 @@ app.get("/salary", (req, res) => {
 
 app.listen(PORT, () => {
     console.log(`Site B running on port ${PORT}`);
+});
+
+app.post("/secure-sum", async (req, res) => {
+
+    try {
+
+        const currentSum =
+            req.body.partialSum;
+
+        const salaryData =
+            JSON.parse(
+                fs.readFileSync(
+                    path.join(
+                        __dirname,
+                        "data",
+                        "salary.json"
+                    ),
+                    "utf8"
+                )
+            );
+
+        const finalSum =
+            currentSum +
+            salaryData.salary_total;
+
+        const response =
+            await axios.post(
+                "http://localhost:3001/final-result",
+                {
+                    partialSum: finalSum
+                }
+            );
+
+        res.json(response.data);
+
+    } catch (error) {
+
+        res.status(500).json({
+            error: error.message
+        });
+
+    }
+
 });
