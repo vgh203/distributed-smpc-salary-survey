@@ -1,4 +1,4 @@
-**NHẬT KÝ THỰC THI VÀ KẾT QUẢ THỰC NGHIỆM**
+**TÀI LIỆU THIẾT KẾ VÀ NHẬT KÝ THỰC THI (DESIGN DOCUMENT & WALKTHROUGH)**
 **ĐỀ TÀI: KHẢO SÁT LƯƠNG BẢO MẬT SỬ DỤNG SMPC VỚI GIAO THỨC SECURE SUM**
 
 Tài liệu này ghi nhận toàn bộ các chỉnh sửa đã thực hiện, hướng dẫn chạy hệ thống thực tế và kết quả chạy kiểm thử chứng minh tính chính xác toán học cùng mức độ bảo mật và khả năng chịu lỗi của giao thức Secure Sum.
