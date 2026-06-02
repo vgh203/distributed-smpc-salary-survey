@@ -4,11 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-  "siteA": "node site-a/server.js",
-  "siteB": "node site-b/server.js",
-  "siteC": "node site-c/server.js",
-  "siteD": "node site-d/server.js"
-},
+    "siteA": "node site-a/server.js",
+    "siteB": "node site-b/server.js",
+    "siteC": "node site-c/server.js",
+    "siteD": "node site-d/server.js",
+    "hacker": "node hacker/hacker.js",
+    "start-all": "node start-all.js"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",

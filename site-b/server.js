@@ -76,7 +76,7 @@ app.post("/secure-sum", async (req, res) => {
 
         const response =
             await axios.post(
-                "http://localhost:3003/secure-sum",
+                "http://127.0.0.1:3003/secure-sum",
                 {
                     partialSum: newSum
                 }

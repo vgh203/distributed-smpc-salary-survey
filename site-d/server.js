@@ -9,7 +9,7 @@ app.use(express.json());
 const PORT = 3004;
 
 app.get("/", (req, res) => {
-    res.send("Site B is running");
+    res.send("Site D is running");
 });
 
 app.get("/salary", (req, res) => {
@@ -28,7 +28,7 @@ app.get("/salary", (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`Site B running on port ${PORT}`);
+    console.log(`Site D running on port ${PORT}`);
 });
 
 app.post("/secure-sum", async (req, res) => {
@@ -56,7 +56,7 @@ app.post("/secure-sum", async (req, res) => {
 
         const response =
             await axios.post(
-                "http://localhost:3001/final-result",
+                "http://127.0.0.1:3001/final-result",
                 {
                     partialSum: finalSum
                 }

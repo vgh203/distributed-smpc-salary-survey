@@ -7,7 +7,7 @@ const app = express();
 app.use(express.json());
 
 const PORT = 3001;
-
+let startTime = 0;
 let randomMask = 0;
 app.get("/", (req, res) => {
     res.send("Site A is running");
@@ -37,7 +37,7 @@ app.get("/test-site-b", async (req, res) => {
     try {
 
         const response = await axios.get(
-            "http://localhost:3002/info"
+            "http://127.0.0.1:3002/info"
         );
 
         res.json({
@@ -81,18 +81,22 @@ app.get("/start-secure-sum", async (req, res) => {
             randomMask
         );
 
+        const useHackerMode = req.query.hacker === "true";
+        const targetUrl = useHackerMode 
+            ? "http://127.0.0.1:3005/secure-sum" 
+            : "http://127.0.0.1:3002/secure-sum";
+
         console.log(
-            "Send To Site B:",
+            `Send To ${useHackerMode ? "Hacker Proxy (Port 3005)" : "Site B (Port 3002)"}:`,
             partialSum
         );
 
-        const response =
-            await axios.post(
-                "http://localhost:3002/secure-sum",
-                {
-                    partialSum
-                }
-            );
+        const response = await axios.post(
+            targetUrl,
+            {
+                partialSum
+            }
+        );
 
         res.json(response.data);
 
@@ -130,11 +134,9 @@ app.post("/final-result", (req, res) => {
     );
 
     res.json({
-        encryptedTotal,
-        randomMask,
-        finalTotal: realTotal,
-        averageSalary:
-            realTotal / 4
-    });
+    globalSum: realTotal,
+    globalAverage:
+        realTotal / 4
+});
 
 });

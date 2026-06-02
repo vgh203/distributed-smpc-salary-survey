@@ -1,0 +1,387 @@
+Distributed Database Project Proposal
+Project ID & Category
+#104 – Secure Multi-party Computation (SMPC): Salary Survey
+________________________________________
+1. Project Identity
+Team Name
+SecureFusion
+Team Members
+Vo Gia Huy
+Student ID: 24N23DCCN163
+Class: D23CQCN03-N
+Posts and Telecommunications Institute of Technology (PTIT) – Ho Chi Minh City Campus
+Project Title
+SecureFusion: A Privacy-Preserving Distributed Salary Survey Using Secure Multi-Party Computation
+________________________________________
+2. Objective & Problem Statement
+The "Why"
+In modern organizations, salary information is considered highly sensitive and confidential. Although management often needs to calculate the total salary expenditure and average salary across departments, revealing each department’s salary information may violate privacy requirements and organizational policies.
+Traditional centralized approaches require all departments to submit their salary data to a central server. This creates several challenges:
+•	Exposure of sensitive salary information.
+•	Increased risk of insider threats and data leakage.
+•	Single point of failure in centralized systems.
+•	Lack of privacy preservation during data aggregation.
+To address these challenges, this project proposes a distributed privacy-preserving salary survey system using Secure Multi-Party Computation (SMPC).
+The system enables multiple departments to collaboratively calculate the global salary sum and global average salary without revealing their individual salary totals to any other department or to a centralized database server.
+The project demonstrates how privacy-preserving computation can be integrated into distributed database environments while maintaining data confidentiality.
+________________________________________
+Core Logic
+The project implements the Secure Sum Protocol, a fundamental Secure Multi-Party Computation technique.
+Assume there are four departments:
+•	Site A
+•	Site B
+•	Site C
+•	Site D
+Each department stores a private salary total:
+•	SA
+•	SB
+•	SC
+•	SD
+The objective is to calculate:
+GlobalSum = SA + SB + SC + SD
+without exposing any individual salary value.
+Protocol Steps
+Step 1: Random Mask Generation
+Site A generates a secret random number:
+R
+This value is known only to Site A.
+________________________________________
+Step 2: Data Masking
+Site A computes:
+M1 = SA + R
+and sends M1 to Site B.
+________________________________________
+Step 3: Site B Aggregation
+Site B adds its private salary:
+M2 = M1 + SB
+and forwards M2 to Site C.
+________________________________________
+Step 4: Site C Aggregation
+Site C computes:
+M3 = M2 + SC
+and sends M3 to Site D.
+________________________________________
+Step 5: Site D Aggregation
+Site D computes:
+M4 = M3 + SD
+and sends M4 back to Site A.
+________________________________________
+Step 6: Final Decryption
+Site A removes the random mask:
+GlobalSum = M4 − R
+The global average salary is then calculated as:
+GlobalAverage = GlobalSum / 4
+________________________________________
+Privacy Preservation
+At no point does any department receive another department’s private salary value.
+The transmitted values are only intermediate aggregated results, which do not reveal the original salary totals.
+Therefore:
+•	Site A cannot determine SB, SC, or SD.
+•	Site B cannot determine SA, SC, or SD.
+•	Site C cannot determine SA, SB, or SD.
+•	Site D cannot determine SA, SB, or SC.
+This preserves privacy while still enabling collaborative computation.
+________________________________________
+Mathematical Correctness
+Let:
+M1 = SA + R
+M2 = SA + R + SB
+M3 = SA + R + SB + SC
+M4 = SA + R + SB + SC + SD
+Site A computes:
+GlobalSum = M4 − R
+Substituting M4:
+GlobalSum
+= (SA + R + SB + SC + SD) − R
+= SA + SB + SC + SD
+Thus:
+Σ(Private Data) = Global Sum
+which proves the correctness of the Secure Sum protocol while maintaining privacy.
+3. Dataset Specification
+Source
+Simulated Dataset
+The dataset is manually generated for educational and experimental purposes. No external dataset is required because the project focuses on privacy-preserving distributed computation rather than large-scale data analytics.
+________________________________________
+Size
+The system consists of 4 independent JSON files, each representing a separate department (site).
+Site	Department	Storage File
+Site A	IT	salary.json
+Site B	HR	salary.json
+Site C	Finance	salary.json
+Site D	Marketing	salary.json
+Total Records: 4
+________________________________________
+Schema
+Each site stores its own private salary information using the following JSON structure:
+{
+    "department": "IT",
+    "salary_total": 120000
+}
+Attributes
+Attribute	Data Type	Description
+department	String	Department name
+salary_total	Integer	Total salary budget of the department
+________________________________________
+Fragmentation Strategy
+This project applies Horizontal Fragmentation by Department.
+Each department owns and manages its salary data independently.
+The fragmentation layout is:
+Site	Data Ownership
+Site A	IT Department Salary
+Site B	HR Department Salary
+Site C	Finance Department Salary
+Site D	Marketing Department Salary
+No site has direct access to another site's private salary data.
+Instead of transferring raw data, sites exchange only intermediate Secure Sum values generated by the protocol.
+This fragmentation strategy reflects a common distributed database scenario where data is physically distributed across multiple locations while computation is performed collaboratively.
+________________________________________
+4. System Architecture
+Nodes
+The system simulates four distributed database sites running as independent Node.js processes on localhost.
+Site	Department	Port
+Site A	IT	3001
+Site B	HR	3002
+Site C	Finance	3003
+Site D	Marketing	3004
+Each site operates independently and maintains its own local storage.
+________________________________________
+Communication Layer
+Communication between sites is implemented using:
+•	HTTP REST API
+•	Express.js
+•	Axios
+The Secure Sum protocol follows a circular communication topology:
+Site A
+   |
+   v
+Site B
+   |
+   v
+Site C
+   |
+   v
+Site D
+   |
+   v
+Site A
+Communication flow:
+1.	Site A generates a random masking value R.
+2.	Site A sends the masked salary sum to Site B.
+3.	Site B adds its salary and forwards the result to Site C.
+4.	Site C adds its salary and forwards the result to Site D.
+5.	Site D adds its salary and returns the result to Site A.
+6.	Site A removes R and calculates the final Global Sum and Global Average.
+________________________________________
+Storage
+Each site stores data locally using JSON files.
+Storage structure:
+Distributed-SMPC-Salary-Survey
+│
+├── site-a
+│   └── data
+│       └── salary.json
+│
+├── site-b
+│   └── data
+│       └── salary.json
+│
+├── site-c
+│   └── data
+│       └── salary.json
+│
+├── site-d
+│   └── data
+│       └── salary.json
+This design ensures that salary information remains physically distributed and privately managed by each department.
+No centralized database server is used during computation.
+________________________________________
+Architectural Characteristics
+The proposed architecture demonstrates several distributed database concepts:
+•	Data Distribution: Data is stored across multiple independent sites.
+•	Local Autonomy: Each site controls its own dataset.
+•	Distributed Processing: Computation is performed collaboratively across sites.
+•	Privacy Preservation: Raw salary values are never shared.
+•	Fault Isolation: Each site can operate independently as a separate process.
+The architecture effectively simulates a distributed environment while remaining lightweight enough to run on a single machine using multiple localhost services.
+5. Tech Stack & Implementation Plan
+Programming Language
+Node.js (JavaScript)
+Node.js is selected because it provides lightweight asynchronous communication, rapid REST API development, and is highly suitable for simulating distributed systems through multiple independent processes.
+________________________________________
+Deployment Environment
+Localhost-based Distributed Simulation
+The system will be deployed as four independent Node.js processes running on different ports:
+•	Site A → Port 3001
+•	Site B → Port 3002
+•	Site C → Port 3003
+•	Site D → Port 3004
+Although executed on a single machine, each site behaves as an independent distributed node.
+________________________________________
+Libraries and Frameworks
+Express.js
+Purpose:
+•	Build REST APIs
+•	Handle incoming requests
+•	Implement Secure Sum communication endpoints
+Example Endpoints:
+GET  /salary
+GET  /start-secure-sum
+POST /secure-sum
+POST /final-result
+________________________________________
+Axios
+Purpose:
+•	Enable communication between distributed sites.
+•	Forward intermediate Secure Sum values between nodes.
+Example:
+Site A → Site B
+Site B → Site C
+Site C → Site D
+Site D → Site A
+________________________________________
+File System (fs)
+Purpose:
+•	Read local JSON datasets.
+•	Simulate private departmental databases.
+________________________________________
+Implementation Plan
+Phase 1: Environment Setup
+•	Initialize Node.js project.
+•	Configure GitHub repository.
+•	Install required libraries.
+•	Create project structure.
+________________________________________
+Phase 2: Dataset Preparation
+•	Create four department datasets.
+•	Store each dataset in a separate site directory.
+________________________________________
+Phase 3: Distributed Node Development
+•	Implement Site A.
+•	Implement Site B.
+•	Implement Site C.
+•	Implement Site D.
+Each site will expose independent REST APIs.
+________________________________________
+Phase 4: Secure Sum Implementation
+•	Generate random masking value.
+•	Implement circular communication flow.
+•	Aggregate distributed salary values.
+•	Recover final global result.
+________________________________________
+Phase 5: Testing and Verification
+•	Validate Global Sum correctness.
+•	Validate Global Average correctness.
+•	Verify privacy preservation requirements.
+________________________________________
+Phase 6: Documentation and Analysis
+•	Prepare proposal.
+•	Prepare design document.
+•	Write analysis report.
+•	Record demonstration video.
+________________________________________
+6. Success Metrics & Analysis
+Quantitative Metric
+The primary metric is the correctness of the Secure Sum computation.
+Expected result:
+Global Sum
+=
+SalaryA + SalaryB + SalaryC + SalaryD
+and
+Global Average
+=
+Global Sum / Number of Sites
+________________________________________
+Mathematical Correctness Metric
+The project must prove:
+Σ(Private Data)
+=
+Global Sum
+Let:
+•	SA = Salary of Site A
+•	SB = Salary of Site B
+•	SC = Salary of Site C
+•	SD = Salary of Site D
+•	R = Random Mask
+Then:
+M1 = SA + R
+M2 = M1 + SB
+M3 = M2 + SC
+M4 = M3 + SD
+GlobalSum = M4 − R
+Substituting:
+GlobalSum
+= (SA + R + SB + SC + SD) − R
+= SA + SB + SC + SD
+Therefore:
+Σ(Private Data) = Global Sum
+which proves protocol correctness.
+________________________________________
+Performance Metric
+The execution time of a Secure Sum cycle will be measured.
+Example:
+Execution Time = End Time − Start Time
+Measured in:
+Milliseconds (ms)
+________________________________________
+Privacy Metric
+The system succeeds if:
+•	No site learns another site's salary.
+•	Only the final Global Sum and Global Average are revealed.
+________________________________________
+The "Failure" Scenario
+Privacy Attack Simulation
+Assume Site B attempts to infer Site A's salary.
+Site B receives:
+SA + R
+However, Site B does not know:
+SA
+or
+R
+Therefore:
+SA + R = 170000
+may correspond to infinitely many possible values.
+Examples:
+120000 + 50000
+100000 + 70000
+90000 + 80000
+Thus Site B cannot determine Site A's actual salary.
+This demonstrates privacy preservation despite active participation in the computation process.
+________________________________________
+7. Project Milestones
+Milestone 1 (Week 3)
+Project Planning
+Deliverables:
+•	Proposal completed.
+•	Architecture defined.
+•	Dataset designed.
+________________________________________
+Milestone 2 (Week 5)
+Environment and Infrastructure Setup
+Deliverables:
+•	Node.js environment configured.
+•	GitHub repository established.
+•	Four distributed sites operational.
+________________________________________
+Milestone 3 (Week 8)
+Secure Sum Protocol Implementation
+Deliverables:
+•	Circular communication established.
+•	Secure Sum protocol operational.
+•	Global Sum successfully computed.
+________________________________________
+Milestone 4 (Week 10)
+Validation and Analysis
+Deliverables:
+•	Mathematical proof completed.
+•	Privacy analysis completed.
+•	Performance measurement completed.
+________________________________________
+Milestone 5 (Week 12)
+Final Submission Preparation
+Deliverables:
+•	Design Document completed.
+•	Analysis Report completed.
+•	Source Code finalized.
+•	Demo Video recorded.
+•	Final presentation prepared.
+
