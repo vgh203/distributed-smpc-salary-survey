@@ -134,3 +134,21 @@ Trong kịch bản mô phỏng thực nghiệm, mỗi site chỉ lưu một con 
   - Trong hệ cơ sở dữ liệu phân tán, chi phí truyền thông mạng là chi phí lớn nhất và nhạy cảm nhất. Nếu sử dụng trạm điều phối trung tâm gửi hàng ngàn dòng dữ liệu thô nhạy cảm qua mạng để thực hiện tính toán, chi phí băng thông mạng và chi phí thiết lập kênh truyền bảo mật (như mã hóa SSL/TLS cho lượng dữ liệu khổng lồ) sẽ cực kỳ lớn.
   - Giao thức Secure Sum của dự án tối ưu hóa tối đa chi phí này: các site tự thực hiện tính toán trên hàng ngàn dòng dữ liệu thô tại cục bộ, và chỉ chuyển tiếp đúng một con số tổng tích lũy bán phần siêu nhẹ dưới dạng JSON qua HTTP POST. Việc này giúp giảm tải băng thông mạng, giảm độ trễ truyền tin (chỉ còn khoảng 20ms - 35ms trên localhost) và tiết kiệm chi phí bảo mật đường truyền toàn cục một cách tối ưu nhất cho doanh nghiệp.
 
+---
+
+6. GIỚI HẠN CỦA MÔ HÌNH VÀ HƯỚNG CẢI TIẾN TƯƠNG LAI (LIMITATIONS & FUTURE IMPROVEMENTS)
+
+Để công trình nghiên cứu mang tính khách quan và khoa học, dự án thừa nhận một số giới hạn thực tế của giao thức Secure Sum cơ bản và đề xuất các giải pháp nâng cấp:
+
+6.1. Tấn công thông đồng (Collusion Attack)
+Đây là giới hạn lý thuyết lớn nhất của giao thức Secure Sum dạng vòng tròn cơ bản. Nếu hai nút đứng liền kề một nút (ví dụ Site B và Site D) cùng thông đồng chia sẻ dữ liệu tích lũy nhận và gửi của họ, họ có thể tính toán chính xác mức lương riêng tư của Site C ở giữa bằng cách lấy hiệu số hai giá trị tích lũy.
+
+6.2. Sự nhạy cảm với sập nút độc lập (Single Node Failure Vulnerability)
+Giao thức mạng vòng nối tiếp yêu cầu tất cả các nút phải hoạt động trực tuyến. Khi một nút bị sập, toàn bộ phiên tính toán tổng lương bị hủy bỏ (Abort). Hệ thống hiện tại chưa có cơ chế tự động khôi phục hoặc bỏ qua nút lỗi mà vẫn giữ nguyên kết quả tính toán chính xác do yêu cầu bảo toàn tính toàn vẹn dữ liệu.
+
+6.3. Hướng cải tiến và phát triển trong tương lai
+  - Áp dụng giao thức Chia sẻ bí mật Shamir (Shamir's Secret Sharing) để nâng cao khả năng chống tấn công thông đồng từ các site tham gia.
+  - Tích hợp kỹ thuật Mã hóa đồng cấu (Homomorphic Encryption) để cho phép thực hiện các phép toán cộng tích lũy trực tiếp trên dữ liệu đã được mã hóa hoàn toàn trước khi truyền tải trên mạng.
+  - Lập trình cơ chế chịu lỗi nâng cao (Fault-tolerant Secure Sum) cho phép hệ thống tự động tái định tuyến quanh nút bị sập mà không làm gián đoạn chu kỳ tính toán toàn cục của các site còn lại.
+
+
