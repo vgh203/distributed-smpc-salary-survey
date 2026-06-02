@@ -27,6 +27,16 @@ app.get("/salary", (req, res) => {
     res.json(data);
 });
 
+app.get("/info", (req, res) => {
+
+    res.json({
+        site: "Site B",
+        department: "HR",
+        status: "online"
+    });
+
+});
+
 app.listen(PORT, () => {
     console.log(`Site B running on port ${PORT}`);
 });
