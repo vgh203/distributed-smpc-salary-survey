@@ -7,7 +7,6 @@ const app = express();
 app.use(express.json());
 
 const PORT = 3001;
-let startTime = 0;
 let randomMask = 0;
 app.get("/", (req, res) => {
     res.send("Site A is running");
@@ -91,6 +90,7 @@ app.get("/start-secure-sum", async (req, res) => {
             partialSum
         );
 
+        const startTime = Date.now();
         const response = await axios.post(
             targetUrl,
             {
@@ -101,7 +101,11 @@ app.get("/start-secure-sum", async (req, res) => {
             }
         );
 
-        res.json(response.data);
+        const duration = Date.now() - startTime;
+        res.json({
+            ...response.data,
+            executionTimeMs: duration
+        });
 
     } catch (error) {
         if (error.response && error.response.data) {
