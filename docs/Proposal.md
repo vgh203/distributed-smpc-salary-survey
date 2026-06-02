@@ -12,7 +12,7 @@
   - Mã số sinh viên: N23DCCN163
   - Lớp: D23CQCN03-N
   - Email: n23dccn163@student.ptithcm.edu.vn
-  - Đơn vị: Khoa Công nghệ Thông tin, Học viện Công nghệ Bưu chính Viễn thông (PTIT), Cơ sở TP. Hồ Chí Minh.
+  - Đơn vị: Khoa Công nghệ Thông tin 2, Học viện Công nghệ Bưu chính Viễn thông (PTIT), Cơ sở TP. Hồ Chí Minh.
 
 1.3. Tên đề tài dự án:
   - Tiếng Anh: A Privacy-Preserving Secure Sum Protocol for Distributed Multi-Party Salary Surveys in Enterprise Database Systems(Giao thức cộng lương bảo mật cho khảo sát lương đa bên bảo vệ quyền riêng tư trong hệ cơ sở dữ liệu phân tán doanh nghiệp)

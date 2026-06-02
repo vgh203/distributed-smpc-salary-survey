@@ -120,3 +120,17 @@ b) Lan truyền lỗi phân tán tự động (Error Propagation and Reporting)
     }
   - Lỗi này được lan truyền ngược lại theo chuỗi cuộc gọi HTTP đến Site A (nút khởi tạo). Site A sẽ bóc tách phản hồi và thông báo chính xác cho người quản trị biết hệ thống đang bị lỗi ở trạm nào.
   - Cơ chế này tương đương với hành động Abort trong quản lý giao dịch phân tán, giải phóng bộ nhớ của các site khác và đảm bảo tính sẵn sàng cao của hệ thống.
+
+---
+
+5. PHÂN TÍCH QUY MÔ DỮ LIỆU THỰC TẾ VÀ TỐI ƯU HÓA CHI PHÍ TRUYỀN THÔNG
+
+Để biện minh cho sự cần thiết và tính kinh tế của Hệ quản trị cơ sở dữ liệu phân tán trong ngữ cảnh ứng dụng thực tế của doanh nghiệp:
+
+5.1. Quy mô dữ liệu thực tế (Large-Scale Data)
+Trong kịch bản mô phỏng thực nghiệm, mỗi site chỉ lưu một con số tổng kết lương cục bộ để đơn giản hóa quá trình chạy thực nghiệm. Tuy nhiên, trong thực tế, các phòng ban (Site A, B, C, D) quản lý hàng ngàn nhân viên với hàng ngàn bản ghi lương chi tiết. Việc phân mảnh dữ liệu ngang lưu trữ tại các site giúp tăng hiệu suất truy vấn cục bộ cực nhanh bằng các câu lệnh gom cụm (Ví dụ: SELECT SUM(salary) FROM employee) trước khi đưa kết quả tổng cục bộ này vào chu trình Secure Sum. Đây là lúc vai trò của hệ CSDL phân tán thực sự phát huy: cho phép lưu trữ và xử lý dữ liệu quy mô lớn một cách song song mà vẫn giữ nguyên tính tự trị dữ liệu của từng site.
+
+5.2. Cân bằng bài toán chi phí truyền thông (Communication Cost Trade-off)
+  - Trong hệ cơ sở dữ liệu phân tán, chi phí truyền thông mạng là chi phí lớn nhất và nhạy cảm nhất. Nếu sử dụng trạm điều phối trung tâm gửi hàng ngàn dòng dữ liệu thô nhạy cảm qua mạng để thực hiện tính toán, chi phí băng thông mạng và chi phí thiết lập kênh truyền bảo mật (như mã hóa SSL/TLS cho lượng dữ liệu khổng lồ) sẽ cực kỳ lớn.
+  - Giao thức Secure Sum của dự án tối ưu hóa tối đa chi phí này: các site tự thực hiện tính toán trên hàng ngàn dòng dữ liệu thô tại cục bộ, và chỉ chuyển tiếp đúng một con số tổng tích lũy bán phần siêu nhẹ dưới dạng JSON qua HTTP POST. Việc này giúp giảm tải băng thông mạng, giảm độ trễ truyền tin (chỉ còn khoảng 20ms - 35ms trên localhost) và tiết kiệm chi phí bảo mật đường truyền toàn cục một cách tối ưu nhất cho doanh nghiệp.
+
