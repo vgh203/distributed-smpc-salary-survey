@@ -1,6 +1,13 @@
 DISTRIBUTED SMPC SALARY SURVEY
 DISTRIBUTED DATABASE FINAL PROJECT
 
+--- LỆNH KHỞI CHẠY NHANH DỰ ÁN ---
+Gõ lệnh duy nhất sau để chạy toàn bộ hệ thống:
+  npm run start-all
+Sau đó truy cập trình duyệt tại địa chỉ:
+  http://127.0.0.1:3001/start-secure-sum
+----------------------------------
+
 1. THÔNG TIN SINH VIÊN
 Sinh viên: Võ Gia Huy
 Mã số sinh viên: N23DCCN163

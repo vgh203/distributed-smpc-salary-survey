@@ -69,7 +69,7 @@ app.get("/start-secure-sum", async (req, res) => {
         const salary = salaryData.salary_total;
 
         randomMask = Math.floor(
-            Math.random() * 1000000000
+            Math.random() * 100000
         );
 
         const partialSum =
