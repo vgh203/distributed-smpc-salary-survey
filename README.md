@@ -4,9 +4,11 @@ Distributed Database Final Project
 
 Student: Vo Gia Huy
 
-Student ID: 24N23DCCN163
+Student ID: N23DCCN163
 
 Class: D23CQCN03-N
+
+Email: n23dccn163@student.ptithcm.edu.vn
 
 PTIT HCMC
 

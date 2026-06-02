@@ -8,8 +8,10 @@
 1.1. Tên nhóm: SecurRing (Kiến trúc mạng vòng bảo mật).
 
 1.2. Thành viên thực hiện:
-- Sinh viên: Võ Gia Huy (MSSV: 24N23DCCN163)
+- Sinh viên: Võ Gia Huy
+- Mã số sinh viên: N23DCCN163
 - Lớp: D23CQCN03-N
+- Email: n23dccn163@student.ptithcm.edu.vn
 - Đơn vị: Khoa Công nghệ Thông tin, Học viện Công nghệ Bưu chính Viễn thông (PTIT), Cơ sở TP. Hồ Chí Minh.
 
 1.3. Tên đề tài dự án:
