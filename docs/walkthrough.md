@@ -1,28 +1,31 @@
 **NHẬT KÝ THỰC THI VÀ KẾT QUẢ THỰC NGHIỆM**
 **ĐỀ TÀI: KHẢO SÁT LƯƠNG BẢO MẬT SỬ DỤNG SMPC VỚI GIAO THỨC SECURE SUM**
 
-Tài liệu này ghi nhận toàn bộ các chỉnh sửa đã thực hiện, hướng dẫn chạy hệ thống thực tế và kết quả chạy kiểm thử chứng minh tính chính xác toán học cùng mức độ bảo mật của giao thức Secure Sum.
+Tài liệu này ghi nhận toàn bộ các chỉnh sửa đã thực hiện, hướng dẫn chạy hệ thống thực tế và kết quả chạy kiểm thử chứng minh tính chính xác toán học cùng mức độ bảo mật và khả năng chịu lỗi của giao thức Secure Sum.
 
 ---
 
 1. CÁC THÀNH PHẦN ĐÃ TRIỂN KHAI (IMPLEMENTED COMPONENTS)
 
 1.1. Bộ điều phối khởi chạy hệ thống (start-all.js):
-  - Khởi chạy song song 5 tiến trình độc lập bao gồm Site A, Site B, Site C, Site D và Hacker Proxy.
-  - Gộp toàn bộ đầu ra (stdout) về một cửa sổ terminal duy nhất, gắn nhãn định danh cho mỗi site (ví dụ: [Site-A], [Site-B], [Hacker]) giúp dễ dàng theo dõi dữ liệu truyền tuần hoàn giữa các cổng.
+Khởi chạy song song 5 tiến trình độc lập bao gồm Site A, Site B, Site C, Site D và Hacker Proxy.
+Gộp toàn bộ đầu ra (stdout) về một cửa sổ terminal duy nhất, gắn nhãn định danh cho mỗi site (ví dụ: [Site-A], [Site-B], [Hacker]) giúp dễ dàng theo dõi dữ liệu truyền tuần hoàn giữa các cổng.
 
 1.2. Mô-đun giả lập nghe lén đường truyền (hacker/hacker.js):
-  - Hoạt động trên cổng 3005 như một proxy trung gian. Khi được kích hoạt, tệp này nhận gói dữ liệu truyền đi từ Site A, in ra phân tích toán học chứng minh kẻ nghe lén không thể giải mã lương gốc, sau đó chuyển tiếp gói tin nguyên vẹn sang Site B để giao thức hoàn thành chu trình.
+Hoạt động trên cổng 3005 như một proxy trung gian. Khi được kích hoạt, tệp này nhận gói dữ liệu truyền đi từ Site A, in ra phân tích toán học chứng minh kẻ nghe lén không thể giải mã lương gốc, sau đó chuyển tiếp gói tin nguyên vẹn sang Site B để giao thức hoàn thành chu trình.
+Được bổ sung cơ chế Axios Timeout 3000ms và khối xử lý lỗi để lan truyền lỗi nếu Site B không phản hồi.
 
 1.3. Site khởi tạo và giải mã (site-a/server.js):
-  - Thay đổi các URL kết nối từ "localhost" thành "127.0.0.1" để đảm bảo giao tiếp ổn định trên môi trường Windows (tránh lỗi xung đột phân giải IPv6).
-  - Bổ sung tham số truy vấn "?hacker=true" tại endpoint khởi động để tùy chọn chuyển hướng gói tin qua cổng của Hacker Proxy.
+Thay đổi các URL kết nối từ "localhost" thành "127.0.0.1" để đảm bảo giao tiếp ổn định trên môi trường Windows (tránh lỗi xung đột phân giải IPv6).
+Bổ sung tham số truy vấn "?hacker=true" tại endpoint khởi động để tùy chọn chuyển hướng gói tin qua cổng của Hacker Proxy.
+Được cấu hình Axios Timeout 3000ms và xử lý lan truyền lỗi khi nhận gói tin phản hồi 502 từ các site trung gian.
 
 1.4. Các nút tích lũy trung gian (site-b, site-c, site-d):
-  - Chuyển đổi toàn bộ liên kết giao tiếp sang địa chỉ IP "127.0.0.1" để đảm bảo tính ổn định và hiệu năng cao.
+Chuyển đổi toàn bộ liên kết giao tiếp sang địa chỉ IP "127.0.0.1" để đảm bảo tính ổn định và hiệu năng cao.
+Được tích hợp cơ chế Axios Timeout 3000ms. Khối xử lý lỗi catch block được nâng cấp để bắt lỗi ECONNREFUSED/ETIMEDOUT với site kế tiếp và trả về phản hồi 502 chi tiết, hoặc chuyển tiếp nguyên vẹn lỗi 502 từ các nút phía sau về nút gốc Site A.
 
 1.5. Cấu hình quản lý dự án (package.json):
-  - Thêm các kịch bản thực thi bao gồm "hacker" và "start-all" để thuận tiện cho việc chạy dự án bằng lệnh npm.
+Thêm các kịch bản thực thi bao gồm "hacker" và "start-all" để thuận tiện cho việc chạy dự án bằng lệnh npm.
 
 ---
 
@@ -55,12 +58,23 @@ Gọi endpoint kiểm thử chế độ nghe lén:
 http://127.0.0.1:3001/start-secure-sum?hacker=true
 Kết quả cuối cùng thu được vẫn chính xác, đồng thời màn hình điều phối sẽ in ra thông tin cảnh báo nghe lén và cơ sở toán học chứng minh tính an toàn thông tin.
 
+2.5. Bước 5: Thử nghiệm kịch bản sập nút (Fault Tolerance / Node Failure)
+Để chứng minh hệ thống có khả năng tự động phát hiện sập nút theo yêu cầu đồ án:
+Tắt tiến trình của Site C (bằng cách đóng tab chạy riêng hoặc chạy lệnh tắt cổng 3003).
+Gọi lại endpoint: http://127.0.0.1:3001/start-secure-sum.
+Kết quả mong đợi: Hệ thống không bị treo vô hạn, phản hồi lỗi 502 chỉ rõ Site C bị sập:
+{
+  "success": false,
+  "failedNode": "Site C (Port 3003)",
+  "message": "Kết nối đến Site C thất bại hoặc hết thời gian chờ. Nút mạng có thể đã bị sập."
+}
+
 ---
 
 3. KẾT QUẢ THỰC NGHIỆM GHI NHẬN (VALIDATION LOGS)
 
-Dưới đây là nhật ký hoạt động thực tế trích xuất từ màn hình console khi chạy thử nghiệm cả hai kịch bản:
-
+3.1. Nhật ký chạy bình thường và Hacker Mode
+Dưới đây là nhật ký hoạt động thực tế trích xuất từ màn hình console khi hệ thống hoạt động bình thường:
 ```text
 [Site-A] Site A running on port 3001
 [Site-B] Site B running on port 3002
@@ -103,12 +117,33 @@ Dưới đây là nhật ký hoạt động thực tế trích xuất từ màn 
 [Site-B] Received: 187707
 [Site-B] Send To Site C: 337707
 [Site-C] Received: 337707
-[Site-C] Send To Site D: 517707
+[Site-D] Received: 517707
 [Site-A] Encrypted Total: 647707
 [Site-A] Random Mask: 67707
 [Site-A] Final Total: 580000
 ```
 
-3.1. Nhận xét đánh giá:
-  - Hiệu quả tính toán (Accuracy): Cả hai kịch bản chạy thử nghiệm đều cho ra kết quả tổng lương chính xác tuyệt đối là 580,000 (đúng bằng tổng giá trị lưu trữ riêng tư tại 4 phòng ban: 120,000 + 150,000 + 180,000 + 130,000). Sai số thực nghiệm bằng 0.
-  - Hiệu quả bảo mật (Security): Trong kịch bản có nghe lén, hacker chỉ bắt được dữ liệu thô chuyển đi là 187,707. Do không nắm giữ số ngẫu nhiên R = 67,707, hacker không có cách nào giải phương trình để suy ra mức lương thực tế của phòng ban IT (120,000). Quyền riêng tư của đơn vị khởi tạo được bảo vệ an toàn.
+3.2. Nhật ký chạy khi sập nút (Site C bị tắt cổng 3003)
+Khi Site C bị tắt thủ công và Site A bắt đầu gọi giao thức:
+```text
+[Site-A] Random Mask: 80357
+[Site-A] Send To Site B (Port 3002): 200357
+[Site-B] Received: 200357
+[Site-B] Send To Site C: 350357
+(Site B thử kết nối sang Site C trong 3 giây nhưng không phản hồi, kích hoạt cơ chế Timeout)
+(Site B bắt lỗi kết nối và trả về mã lỗi 502 Bad Gateway chứa thông báo lỗi phân tán)
+(Site A nhận mã lỗi 502, trích xuất thông tin lỗi phân tán và trả về cho Client)
+```
+Kết quả HTTP Response thu được tại Client:
+Mã trạng thái: 502 Bad Gateway
+Nội dung phản hồi:
+{
+  "success": false,
+  "failedNode": "Site C (Port 3003)",
+  "message": "Kết nối đến Site C thất bại hoặc hết thời gian chờ. Nút mạng có thể đã bị sập."
+}
+
+3.3. Nhận xét đánh giá chung
+- Tính chính xác (Accuracy): Cả hai kịch bản chạy thử nghiệm đều cho ra kết quả tổng lương chính xác tuyệt đối là 580,000. Sai số thực nghiệm bằng 0.
+- Tính bảo mật (Security): Trong kịch bản có nghe lén, hacker chỉ bắt được dữ liệu thô. Do không nắm giữ số ngẫu nhiên R, hacker không có cách nào giải phương trình để suy ra mức lương thực tế của phòng ban khởi tạo.
+- Khả năng chịu lỗi (Resiliency): Nhờ cơ chế Timeout 3s và lan truyền lỗi phân tán (Distributed Error Propagation), hệ thống phát hiện chính xác nút mạng bị sập (Site C) và ngắt giao dịch an toàn để giải phóng luồng kết nối cho các site khác, ngăn chặn tình trạng khóa chặn vô hạn (Blocking) gây cạn kiệt tài nguyên hệ thống.

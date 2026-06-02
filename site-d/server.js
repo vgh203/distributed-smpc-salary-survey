@@ -54,22 +54,33 @@ app.post("/secure-sum", async (req, res) => {
             currentSum +
             salaryData.salary_total;
 
-        const response =
-            await axios.post(
-                "http://127.0.0.1:3001/final-result",
-                {
-                    partialSum: finalSum
-                }
-            );
+        const response = await axios.post(
+            "http://127.0.0.1:3001/final-result",
+            {
+                partialSum: finalSum
+            },
+            {
+                timeout: 3000
+            }
+        );
 
         res.json(response.data);
 
     } catch (error) {
-
-        res.status(500).json({
-            error: error.message
-        });
-
+        if (error.response && error.response.data) {
+            res.status(error.response.status).json(error.response.data);
+        } else if (error.code === "ECONNREFUSED" || error.code === "ETIMEDOUT") {
+            res.status(502).json({
+                success: false,
+                failedNode: "Site A (Port 3001)",
+                message: "Kết nối đến Site A để hoàn tất kết quả thất bại hoặc hết thời gian chờ. Nút mạng có thể đã bị sập."
+            });
+        } else {
+            res.status(500).json({
+                success: false,
+                message: error.message
+            });
+        }
     }
 
 });

@@ -64,22 +64,33 @@ app.post("/secure-sum", async (req, res) => {
             newSum
         );
 
-        const response =
-            await axios.post(
-                "http://127.0.0.1:3004/secure-sum",
-                {
-                    partialSum: newSum
-                }
-            );
+        const response = await axios.post(
+            "http://127.0.0.1:3004/secure-sum",
+            {
+                partialSum: newSum
+            },
+            {
+                timeout: 3000
+            }
+        );
 
         res.json(response.data);
 
     } catch (error) {
-
-        res.status(500).json({
-            error: error.message
-        });
-
+        if (error.response && error.response.data) {
+            res.status(error.response.status).json(error.response.data);
+        } else if (error.code === "ECONNREFUSED" || error.code === "ETIMEDOUT") {
+            res.status(502).json({
+                success: false,
+                failedNode: "Site D (Port 3004)",
+                message: "Kết nối đến Site D thất bại hoặc hết thời gian chờ. Nút mạng có thể đã bị sập."
+            });
+        } else {
+            res.status(500).json({
+                success: false,
+                message: error.message
+            });
+        }
     }
 
 });

@@ -95,17 +95,32 @@ app.get("/start-secure-sum", async (req, res) => {
             targetUrl,
             {
                 partialSum
+            },
+            {
+                timeout: 3000
             }
         );
 
         res.json(response.data);
 
     } catch (error) {
-
-        res.status(500).json({
-            error: error.message
-        });
-
+        if (error.response && error.response.data) {
+            res.status(error.response.status).json(error.response.data);
+        } else if (error.code === "ECONNREFUSED" || error.code === "ETIMEDOUT") {
+            const nextNode = req.query.hacker === "true" 
+                ? "Hacker Proxy (Port 3005)" 
+                : "Site B (Port 3002)";
+            res.status(502).json({
+                success: false,
+                failedNode: nextNode,
+                message: `Kết nối đến ${nextNode} thất bại hoặc hết thời gian chờ. Nút mạng có thể đã bị sập.`
+            });
+        } else {
+            res.status(500).json({
+                success: false,
+                message: error.message
+            });
+        }
     }
 
 });

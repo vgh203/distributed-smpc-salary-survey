@@ -32,16 +32,32 @@ app.post("/secure-sum", async (req, res) => {
 
     try {
         // Forward the unmodified packet to Site B to allow the protocol to execute smoothly
-        const response = await axios.post("http://127.0.0.1:3002/secure-sum", {
-            partialSum
-        });
+        const response = await axios.post(
+            "http://127.0.0.1:3002/secure-sum",
+            {
+                partialSum
+            },
+            {
+                timeout: 3000
+            }
+        );
         res.json(response.data);
     } catch (error) {
         console.error(`\x1b[31m[Hacker Error]:\x1b[0m Failed to forward packet to Site B. Is Site B running?`);
-        res.status(500).json({
-            error: "Hacker proxy failed to forward packet",
-            details: error.message
-        });
+        if (error.response && error.response.data) {
+            res.status(error.response.status).json(error.response.data);
+        } else if (error.code === "ECONNREFUSED" || error.code === "ETIMEDOUT") {
+            res.status(502).json({
+                success: false,
+                failedNode: "Site B (Port 3002)",
+                message: "Hacker Proxy kết nối đến Site B thất bại hoặc hết thời gian chờ. Nút mạng có thể đã bị sập."
+            });
+        } else {
+            res.status(500).json({
+                success: false,
+                message: error.message
+            });
+        }
     }
 });
 
