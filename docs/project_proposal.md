@@ -179,6 +179,10 @@ Trong đó: department là tên phòng ban (IT, HR, Finance, Marketing) và sala
   - Phân tích tính an toàn: Hacker có phương trình S_1 = X_A + R. Do cả dữ liệu thật X_A và mặt nạ ngẫu nhiên R đều là các ẩn số đối với hacker, phương trình này có vô số bộ nghiệm thỏa mãn. Kẻ tấn công không thể xác định giá trị lương thực sự X_A từ gói tin bắt được. Quyền riêng tư của Site A được bảo toàn.
   - Triển khai thực tế: Lập trình tệp hacker.js đóng vai trò proxy cổng 3005 để bắt gói tin và hiển thị log minh họa quá trình phân tích bất khả thi của hacker.
 
+6.3. Kịch bản sập nút mạng phân tán (Node Failure Scenario):
+  - Kịch bản: Mô phỏng tình huống một nút mạng trung gian (ví dụ: Site C) bị sập mạng độc lập (Independent Node Failure) hoặc bị tắt tiến trình đột ngột trong khi vòng truyền dữ liệu đang diễn ra.
+  - Phân tích hoạt động chịu lỗi: Khi Site B gửi dữ liệu sang Site C và bị hết thời gian chờ (Axios Timeout 3 giây), Site B sẽ phát hiện sự cố, từ chối treo hệ thống và trả về mã lỗi HTTP 502 (Bad Gateway) kèm thông tin định danh nút lỗi. Thông tin này sẽ được truyền ngược lại vòng lặp về Site A để thông báo rõ ràng cho người quản trị thay vì để toàn bộ hệ thống phân tán bị treo vô hạn (Blocking). Điều này chứng minh hệ thống có khả năng phục hồi và chịu lỗi phân tán bền vững.
+
 ---
 
 7. TIẾN ĐỘ THỰC HIỆN DỰ ÁN (PROJECT MILESTONES)

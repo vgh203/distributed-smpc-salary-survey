@@ -6,10 +6,10 @@ MÃ ĐỀ TÀI: 104
 
 1. GIỚI THIỆU CHUNG VỀ LÝ THUYẾT ÁP DỤNG
 
-Dự án nghiên cứu này áp dụng các nguyên lý cốt lõi của Hệ quản trị Cơ sở dữ liệu phân tán (DDBMS) được trình bày trong giáo trình "Distributed Database Management Systems: A Practical Approach" của hai tác giả Saeed K. Rahimi và Frank S. Haug (Nhà xuất bản Wiley, 2010). Các nội dung lý thuyết chính được tích hợp và làm sáng tỏ thông qua dự án bao gồm:
-  - Phân mảnh ngang dữ liệu (Horizontal Fragmentation) tại Chương 2.
+Dự án nghiên cứu này áp dụng các nguyên lý cốt lõi của Hệ quản trị Cơ sở dữ liệu phân tán (DDBMS) được trình bày trong giáo trình "Distributed Database Management Systems: A Practical Approach" của hai tác giả Saeed K. Rahimi và Frank S. Haug (Wiley, 2010), đồng thời đối chiếu với lý thuyết thiết kế phân tán kinh điển trong cuốn "Principles of Distributed Database Systems" của M. Tamer Özsu và Patrick Valduriez. Các nội dung lý thuyết chính được tích hợp và làm sáng tỏ thông qua dự án bao gồm:
+  - Phân mảnh ngang dữ liệu (Horizontal Fragmentation) (theo lý thuyết thiết kế phân mảnh và 3 quy tắc đúng đắn của Özsu và Valduriez).
   - Bảo mật dữ liệu phân tán và tính toán bảo vệ quyền riêng tư (Privacy-preserving Distributed Aggregation).
-  - Khả năng phục hồi và chịu lỗi của hệ thống phân tán (Distributed Fault Tolerance and Crash Recovery) tại Chương 8.
+  - Khả năng phục hồi và chịu lỗi của hệ thống phân tán (Distributed Fault Tolerance and Crash Recovery) liên quan đến cơ chế Timeout và phục hồi giao dịch phân tán.
 
 ---
 
@@ -35,7 +35,7 @@ Kết quả thu được 4 mảnh dữ liệu ngang phân tán vật lý:
   - Luong_D = Chọn các bản ghi thỏa mãn vị từ P_D từ bảng Luong (Lưu tại Site D - Cổng 3004)
 
 2.2. Chứng minh 3 quy tắc đúng đắn của phân mảnh ngang
-Theo lý thuyết tại Mục 2.3 trong giáo trình của Saeed K. Rahimi, một thiết kế phân mảnh dữ liệu ngang được coi là đúng đắn và chính xác khi và chỉ khi thỏa mãn đầy đủ 3 quy tắc học thuật sau đây:
+Theo lý thuyết thiết kế phân mảnh của M. Tamer Özsu và Patrick Valduriez (cũng như Mục 2.3 trong giáo trình của Saeed K. Rahimi), một thiết kế phân mảnh dữ liệu ngang được coi là đúng đắn và chính xác khi và chỉ khi thỏa mãn đầy đủ 3 quy tắc học thuật sau đây:
 
 a) Quy tắc tính đầy đủ (Completeness Rule)
   - Định nghĩa lý thuyết: Một quan hệ R được phân rã thành các mảnh R_1, R_2, ..., R_n. Phép phân rã là đầy đủ khi và chỉ khi mỗi mục dữ liệu nằm trong R đều thuộc ít nhất một mảnh R_i.
