@@ -1,4 +1,8 @@
 {
   "department": "HR",
-  "salary_total": 150000
+  "employees": [
+    {"name": "Pham Hong D", "role": "HR Manager", "salary": 60000},
+    {"name": "Hoang Lan E", "role": "Talent Acquisition", "salary": 45000},
+    {"name": "Doan Minh F", "role": "HR Specialist", "salary": 45000}
+  ]
 }

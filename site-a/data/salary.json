@@ -1,4 +1,8 @@
 {
   "department": "IT",
-  "salary_total": 120000
+  "employees": [
+    {"name": "Nguyen Van A", "role": "Senior Developer", "salary": 50000},
+    {"name": "Tran Thi B", "role": "UI/UX Designer", "salary": 35000},
+    {"name": "Le Hoang C", "role": "QA Engineer", "salary": 35000}
+  ]
 }

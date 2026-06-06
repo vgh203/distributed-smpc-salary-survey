@@ -6,6 +6,9 @@ const processes = [
     { name: "Site-B", script: "site-b/server.js", color: "\x1b[32m" }, // Green
     { name: "Site-C", script: "site-c/server.js", color: "\x1b[33m" }, // Yellow
     { name: "Site-D", script: "site-d/server.js", color: "\x1b[35m" }, // Magenta
+    // Hacker Proxy is started automatically by default for demonstration and evaluation convenience.
+    // This allows testing both "normal mode" and "hacker mode" (?hacker=true) in a single run
+    // without requiring the user or examiner to manually spin up additional background processes.
     { name: "Hacker", script: "hacker/hacker.js", color: "\x1b[31m" }  // Red
 ];
 

@@ -1,4 +1,8 @@
 {
   "department": "Finance",
-  "salary_total": 180000
+  "employees": [
+    {"name": "Vu Xuan G", "role": "Financial Director", "salary": 80000},
+    {"name": "Ngo Quoc H", "role": "Chief Accountant", "salary": 55000},
+    {"name": "Bui Minh I", "role": "Financial Analyst", "salary": 45000}
+  ]
 }

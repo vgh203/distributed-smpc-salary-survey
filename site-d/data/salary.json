@@ -1,4 +1,8 @@
 {
   "department": "Marketing",
-  "salary_total": 130000
+  "employees": [
+    {"name": "Ly Khanh J", "role": "Marketing Team Lead", "salary": 50000},
+    {"name": "Dang Linh K", "role": "Content Creator", "salary": 40000},
+    {"name": "Phan Son L", "role": "SEO Specialist", "salary": 40000}
+  ]
 }

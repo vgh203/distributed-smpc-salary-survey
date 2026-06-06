@@ -46,7 +46,19 @@ http://127.0.0.1:3001/start-secure-sum
 Truy cập đường dẫn sau để chạy mô phỏng qua cổng Hacker Proxy:
 http://127.0.0.1:3001/start-secure-sum?hacker=true
 
-5. KẾT QUẢ ĐẦU RA MẪU MONG ĐỢI
+4.5. Xác thực tính đúng đắn toán học (Verification Mode)
+Truy cập đường dẫn sau để đối chiếu kết quả Secure Sum với tổng lương thực tế (Ground Truth) bằng cách đọc trực tiếp database động (Trusted Auditor Simulation) để chứng minh sai số bằng 0:
+http://127.0.0.1:3001/verify
+
+4.6. Kích hoạt chế độ tấn công sửa đổi dữ liệu (Active MitM Tampering Mode)
+Truy cập đường dẫn sau để mô phỏng Hacker Proxy chủ động chỉnh sửa thông tin trên đường truyền (thay đổi partialSum chặng gửi):
+http://127.0.0.1:3001/start-secure-sum?hacker=true&tamper=true
+
+4.7. Đo lường hiệu năng định lượng (Benchmark Mode)
+Truy cập đường dẫn sau để so sánh số chặng (network hops), kích thước byte truyền mạng và mức độ rủi ro bảo mật giữa SMPC Secure Sum và cơ chế tập trung truyền thống (Traditional Centralized Coordinator):
+http://127.0.0.1:3001/benchmark
+
+5. KẾT QUẢ ĐẦU RA MẪU MONG ĐỢI (NORMAL MODE)
 Hệ thống tính tổng quỹ lương toàn cục và trung bình lương:
 {
   "globalSum": 580000,
