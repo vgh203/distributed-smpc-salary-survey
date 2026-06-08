@@ -58,9 +58,16 @@ http://127.0.0.1:3001/start-secure-sum?hacker=true&tamper=true
 Truy cập đường dẫn sau để so sánh số chặng (network hops), kích thước byte truyền mạng và mức độ rủi ro bảo mật giữa SMPC Secure Sum và cơ chế tập trung truyền thống (Traditional Centralized Coordinator):
 http://127.0.0.1:3001/benchmark
 
+4.8. Mô phỏng tấn công thông đồng (Collusion Attack Demo)
+Truy cập đường dẫn sau để mô phỏng kịch bản hai site lân cận (Site B và Site D) thông đồng chia sẻ dữ liệu giao dịch để bạch lộ mức lương riêng tư của Site C ở giữa (khai thác giới hạn lý thuyết của Secure Sum cơ bản):
+http://127.0.0.1:3001/collusion-demo
+
 5. KẾT QUẢ ĐẦU RA MẪU MONG ĐỢI (NORMAL MODE)
 Hệ thống tính tổng quỹ lương toàn cục và trung bình lương:
 {
   "globalSum": 580000,
-  "globalAverage": 145000
+  "globalAverage": 145000,
+  "globalAveragePerDepartment": 145000,
+  "globalAveragePerEmployee": 48333.333333333336,
+  "totalEmployees": 12
 }

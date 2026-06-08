@@ -2,7 +2,7 @@ BẢN PHÂN TÍCH LÝ THUYẾT CƠ SỞ DỮ LIỆU PHÂN TÁN
 ĐỀ TÀI: KHẢO SÁT LƯƠNG BẢO MẬT SỬ DỤNG SMPC VỚI GIAO THỨC SECURE SUM
 MÃ ĐỀ TÀI: 104
 
----
+
 
 1. GIỚI THIỆU CHUNG VỀ LÝ THUYẾT ÁP DỤNG
 
@@ -11,7 +11,7 @@ Dự án nghiên cứu này áp dụng các nguyên lý cốt lõi của Hệ qu
   - Bảo mật dữ liệu phân tán và tính toán bảo vệ quyền riêng tư (Privacy-preserving Distributed Aggregation).
   - Khả năng phục hồi và chịu lỗi của hệ thống phân tán (Distributed Fault Tolerance and Crash Recovery) liên quan đến cơ chế Timeout và phục hồi giao dịch phân tán.
 
----
+
 
 2. PHÂN MẢNH NGANG DỮ LIỆU TRONG HỆ THỐNG PHÂN TÁN
 
@@ -57,7 +57,7 @@ c) Quy tắc tính tách biệt (Disjointness Rule)
     Luong_D giao Luong_A = rỗng
     Như vậy, không có nhân viên nào bị trùng lặp dữ liệu lương ở hai site khác nhau, đảm bảo tính tách biệt tuyệt đối giữa các mảnh.
 
----
+
 
 3. BẢO MẬT PHÂN TÁN: ĐIỀU PHỐI TRUY VẤN TRUYỀN THỐNG VS SMPC SECURE SUM
 
@@ -95,7 +95,7 @@ c) Giới hạn của mô hình và hướng khắc phục (Limitations & Mitiga
   - Tấn công thông đồng (Collusion Attack): Nếu hai site đứng liền kề một site (ví dụ Site B và Site D cùng thông đồng) để chia sẻ các giá trị tích lũy nhận và gửi đi của họ, họ có thể tính toán được lương của Site C ở giữa bằng cách lấy hiệu số hai giá trị tích lũy. Đây là một giới hạn lý thuyết của giao thức Secure Sum cơ bản dạng vòng tròn.
   - Hướng khắc phục: Để chống lại tấn công thông đồng trong các hệ thống thực tế quy mô lớn, hệ thống có thể nâng cấp lên giao thức Chia sẻ bí mật Shamir (Shamir's Secret Sharing) hoặc áp dụng Mã hóa đồng cấu (Homomorphic Encryption) để thực hiện tính toán trực tiếp trên dữ liệu đã được mã hóa hoàn toàn.
 
----
+
 
 
 3.4. Mô phỏng Tấn công Thông đồng Thực tế (Collusion Attack Simulation)
@@ -127,20 +127,19 @@ b) Lan truyền lỗi phân tán tự động (Error Propagation and Reporting)
   - Lỗi này được lan truyền ngược lại theo chuỗi cuộc gọi HTTP đến Site A (nút khởi tạo). Site A sẽ bóc tách phản hồi và thông báo chính xác cho người quản trị biết hệ thống đang bị lỗi ở trạm nào.
   - Cơ chế này tương đương với hành động Abort trong quản lý giao dịch phân tán, giải phóng bộ nhớ của các site khác và đảm bảo tính sẵn sàng cao của hệ thống.
 
----
 
 5. PHÂN TÍCH QUY MÔ DỮ LIỆU THỰC TẾ VÀ TỐI ƯU HÓA CHI PHÍ TRUYỀN THÔNG
 
 Để biện minh cho sự cần thiết và tính kinh tế của Hệ quản trị cơ sở dữ liệu phân tán trong ngữ cảnh ứng dụng thực tế của doanh nghiệp:
 
 5.1. Quy mô dữ liệu thực tế (Large-Scale Data)
-Trong kịch bản mô phỏng thực nghiệm, mỗi site chỉ lưu một con số tổng kết lương cục bộ để đơn giản hóa quá trình chạy thực nghiệm. Tuy nhiên, trong thực tế, các phòng ban (Site A, B, C, D) quản lý hàng ngàn nhân viên với hàng ngàn bản ghi lương chi tiết. Việc phân mảnh dữ liệu ngang lưu trữ tại các site giúp tăng hiệu suất truy vấn cục bộ cực nhanh bằng các câu lệnh gom cụm (Ví dụ: SELECT SUM(salary) FROM employee) trước khi đưa kết quả tổng cục bộ này vào chu trình Secure Sum. Đây là lúc vai trò của hệ CSDL phân tán thực sự phát huy: cho phép lưu trữ và xử lý dữ liệu quy mô lớn một cách song song mà vẫn giữ nguyên tính tự trị dữ liệu của từng site.
+Trong kịch bản mô phỏng thực nghiệm hiện tại, mỗi site lưu trữ bảng dữ liệu nhân viên cục bộ gồm 3 bản ghi (employees[]) với đầy đủ các trường: id, name, role, salary. Mỗi site tự thực hiện phép gom nhóm cục bộ (localSum = ΣX_i) ngay trước khi đưa kết quả vào chu trình Secure Sum — đây là triển khai đúng nguyên tắc phân tán: xử lý tại nguồn, không phát tán dữ liệu thô. Ở quy mô doanh nghiệp thực tế, các phòng ban (Site A, B, C, D) quản lý hàng ngàn nhân viên với hàng ngàn bản ghi lương chi tiết. Việc phân mảnh dữ liệu ngang (Horizontal Partitioning) lưu trữ tại các site giúp tăng hiệu suất truy vấn cục bộ cực nhanh bằng các câu lệnh gom cụm SQL (Ví dụ: SELECT SUM(salary) FROM employee) trước khi đưa kết quả tổng cục bộ này vào chu trình Secure Sum. Đây là lúc vai trò của hệ CSDL phân tán thực sự phát huy: cho phép lưu trữ và xử lý dữ liệu quy mô lớn một cách song song mà vẫn giữ nguyên tính tự trị dữ liệu của từng site.
 
 5.2. Cân bằng bài toán chi phí truyền thông (Communication Cost Trade-off)
   - Trong hệ cơ sở dữ liệu phân tán, chi phí truyền thông mạng là chi phí lớn nhất và nhạy cảm nhất. Nếu sử dụng trạm điều phối trung tâm gửi hàng ngàn dòng dữ liệu thô nhạy cảm qua mạng để thực hiện tính toán, chi phí băng thông mạng và chi phí thiết lập kênh truyền bảo mật (như mã hóa SSL/TLS cho lượng dữ liệu khổng lồ) sẽ cực kỳ lớn.
-  - Giao thức Secure Sum của dự án tối ưu hóa tối đa chi phí này: các site tự thực hiện tính toán trên hàng ngàn dòng dữ liệu thô tại cục bộ, và chỉ chuyển tiếp đúng một con số tổng tích lũy bán phần siêu nhẹ dưới dạng JSON qua HTTP POST. Việc này giúp giảm tải băng thông mạng, giảm độ trễ truyền tin (chỉ còn khoảng 20ms - 35ms trên localhost) và tiết kiệm chi phí bảo mật đường truyền toàn cục một cách tối ưu nhất cho doanh nghiệp.
+  - Giao thức Secure Sum của dự án tối ưu hóa tối đa chi phí băng thông: các site tự thực hiện tính toán gom nhóm trên bảng dữ liệu nhân viên tại cục bộ, và chỉ chuyển tiếp đúng một con số tổng tích lũy bán phần siêu nhẹ dưới dạng JSON qua HTTP POST. Kết quả đo lường thực nghiệm (GET /benchmark) cho thấy SMPC chỉ truyền ~O(1) byte cố định mỗi hop trong khi phương án tập trung truyền ~O(N) byte tỷ lệ tuyến tính với số nhân viên.
+  - Đánh đổi về độ trễ (Latency Trade-off): Giao thức Secure Sum sử dụng chuỗi tuần tự đồng bộ (A→B→C→D→A), tạo ra tổng 8 hop yêu cầu-phản hồi. Trong khi đó, phương án tập trung sử dụng 6 hop song song (Coordinator gửi 3 yêu cầu đồng thời tới B, C, D). Do đó, độ trễ tổng thể của SMPC cao hơn, nhưng đây là chi phí chấp nhận được (accepted cost) để đổi lấy đảm bảo quyền riêng tư dữ liệu cục bộ — không một bản ghi nhân viên nào bị lộ qua mạng trong suốt quá trình tính toán.
 
----
 
 6. GIỚI HẠN CỦA MÔ HÌNH VÀ HƯỚNG CẢI TIẾN TƯƠNG LAI (LIMITATIONS & FUTURE IMPROVEMENTS)
 

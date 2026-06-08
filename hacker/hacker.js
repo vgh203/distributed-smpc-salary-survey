@@ -28,6 +28,9 @@ app.post("/secure-sum", async (req, res) => {
         forwardedSum = partialSum + 999999;
         console.log(`\x1b[31m[!] ACTIVE ATTACK (MitM Tampering):\x1b[0m Injecting false data into payload!`);
         console.log(`    Modifying partialSum from ${partialSum} to ${forwardedSum}`);
+        console.log(`\x1b[33m[!] HMAC NOTE:\x1b[0m Hacker does NOT have the shared secret key.`);
+        console.log(`    The tampered packet will have an invalid/missing signature.`);
+        console.log(`    Site B will reject this packet with HTTP 401 INTEGRITY VIOLATION.`);
     } else {
         console.log(`\x1b[33m[MATHEMATICAL ANALYSIS]:\x1b[0m`);
         console.log(`   Equation caught: partialSum = Salary_A + R`);
@@ -39,20 +42,21 @@ app.post("/secure-sum", async (req, res) => {
         console.log(`     - If R = 1,234,567,890  => Salary_A = ${partialSum - 1234567890}`);
         console.log(`     - If R = 5,555,555,555  => Salary_A = ${partialSum - 5555555555}`);
         console.log(`     - If R = 9,876,543,210  => Salary_A = ${partialSum - 9876543210}`);
-        console.log(`\x1b[32m[SECURITY STATUS]:\x1b[0m Encryption secure. Zero information leaked about Site A's true salary.`);
+        console.log(`\x1b[32m[SECURITY STATUS]:\x1b[0m Privacy preserved. Site A's true salary cannot be inferred from intercepted packets.`);
     }
     console.log("\x1b[41m\x1b[37m=================================================================\x1b[0m\n");
 
     try {
-        // Forward the packet (possibly tampered) to Site B
+        // Forward the packet (possibly tampered) to Site B.
+        // In tamper mode: signature is intentionally OMITTED to simulate an attacker
+        // who cannot forge a valid HMAC without knowing the shared secret key.
+        const forwardBody = shouldTamper
+            ? { transactionId, partialSum: forwardedSum, employeeCount } // No signature — HMAC will fail at Site B
+            : { transactionId, partialSum: forwardedSum, employeeCount, ...req.body.signature ? { signature: req.body.signature } : {} };
+
         const response = await axios.post(
             `${SITE_B}/secure-sum`,
-            {
-                transactionId,
-                partialSum: forwardedSum,
-                employeeCount,
-                tamper: shouldTamper
-            },
+            forwardBody,
             {
                 timeout: 3000
             }

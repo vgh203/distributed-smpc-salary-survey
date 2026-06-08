@@ -4,7 +4,6 @@ MÃ ĐỀ TÀI: 104
 
 Tài liệu này đặc tả chi tiết kiến trúc phân tán, luồng giao tiếp mạng vòng, thiết kế lưu trữ cục bộ và cơ chế chịu lỗi của hệ thống mô phỏng tính toán tổng lương đa bên bảo toàn quyền riêng tư.
 
----
 
 1. SƠ ĐỒ KIẾN TRÚC HỆ THỐNG (SYSTEM ARCHITECTURE DIAGRAM)
 
@@ -45,7 +44,7 @@ graph LR
   - Chế độ nghe lén (Hacker Mode): Khi được kích hoạt, dữ liệu đi từ Site A sẽ chuyển hướng qua cổng 3005 của Hacker Proxy, sau đó Hacker Proxy chuyển tiếp nguyên vẹn sang Site B để hoàn tất luồng truyền tin.
   - Endpoint xác thực (Verification Endpoint):
     + GET /verify: Endpoint được thiết lập tại Site A nhằm mục đích mô phỏng kết quả đối chiếu thực tế (Ground Truth) dựa trên đặc tả dữ liệu doanh nghiệp (IT: 120,000, HR: 150,000, Finance: 180,000, Marketing: 130,000).
-    + Kết quả này được đối chiếu bằng cách gọi HTTP API đến các site khác qua endpoint GET /local-summary để lấy dữ liệu tổng cục bộ của họ, bảo đảm tính tự trị dữ liệu tuyệt đối (Shared-Nothing) và không vi phạm quyền riêng tư của các phòng ban trong quá trình tính toán thực tế.
+    + Kết quả này được đối chiếu bằng cách gọi HTTP API đến các site khác qua endpoint GET /local-summary để lấy dữ liệu tổng cục bộ của họ, bảo đảm tính tự trị dữ liệu cục bộ (Shared-Nothing) và không vi phạm quyền riêng tư của các phòng ban trong quá trình tính toán thực tế.
 
 ---
 

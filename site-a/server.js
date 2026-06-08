@@ -4,7 +4,7 @@ const path = require("path");
 const axios = require("axios");
 const crypto = require("crypto");
 const cors = require("cors");
-const { SITE_B, SITE_C, SITE_D, HACKER_PROXY, NUM_SITES } = require("../shared/config/network");
+const { SITE_B, SITE_C, SITE_D, HACKER_PROXY, NUM_SITES, signPayload } = require("../shared/config/network");
 
 const app = express();
 
@@ -39,6 +39,9 @@ app.get("/test-site-b", async (req, res) => {
     }
 });
 
+// GET /local-summary — Shared-Nothing Compliance: returns ONLY aggregated stats.
+// Raw employee records are NEVER exposed over the network, even to the /verify auditor.
+// This endpoint is the boundary between local private data and the shared ring protocol.
 app.get("/local-summary", (req, res) => {
     try {
         const salaryData = JSON.parse(
@@ -52,8 +55,9 @@ app.get("/local-summary", (req, res) => {
             success: true,
             department: salaryData.department,
             localSum: localSum,
-            employeeCount: salaryData.employees.length,
-            employees: salaryData.employees
+            employeeCount: salaryData.employees.length
+            // employees[] intentionally omitted — Shared-Nothing Architecture principle.
+            // No raw payroll records cross the network boundary.
         });
     } catch (error) {
         res.status(500).json({
@@ -95,6 +99,9 @@ app.get("/start-secure-sum", async (req, res) => {
             ? `${HACKER_PROXY}/secure-sum?tamper=${useTamperMode}` 
             : `${SITE_B}/secure-sum`;
 
+        // Sign the outgoing payload with HMAC-SHA256 for per-hop integrity verification
+        const signature = signPayload(transactionId, partialSum, count);
+
         console.log(
             `[Site A] Send To ${useHackerMode ? "Hacker Proxy (Port 3005)" : "Site B (Port 3002)"}:`,
             { transactionId, partialSum, employeeCount: count }
@@ -106,7 +113,8 @@ app.get("/start-secure-sum", async (req, res) => {
             {
                 transactionId,
                 partialSum,
-                employeeCount: count
+                employeeCount: count,
+                signature
             },
             {
                 timeout: 3000
@@ -228,22 +236,30 @@ app.get("/verify", async (req, res) => {
     }
 });
 
-// Quantitative Metric Endpoint: compares network hops and payload bytes between SMPC and Traditional
+// Quantitative Metric Endpoint: compares network hops and payload bytes between SMPC and Traditional.
+// Shared-Nothing compliance: Traditional payload size is ESTIMATED using realistic schema per employee,
+// NOT by pulling actual employee records from remote sites (which would violate privacy).
 app.get("/benchmark", async (req, res) => {
     try {
         const dbA = JSON.parse(fs.readFileSync(path.join(__dirname, "data", "salary.json"), "utf8"));
         const countA = dbA.employees.length;
 
-        // Fetch from other sites via HTTP
+        // Fetch aggregated stats only from other sites (no raw records exposed)
         const responseB = await axios.get(`${SITE_B}/local-summary`);
         const responseC = await axios.get(`${SITE_C}/local-summary`);
         const responseD = await axios.get(`${SITE_D}/local-summary`);
 
         const empCount = countA + responseB.data.employeeCount + responseC.data.employeeCount + responseD.data.employeeCount;
 
-        // Traditional Centralized: Coordinator pulls all raw rows from B, C, D
-        const traditionalPayload = JSON.stringify(responseB.data.employees) + JSON.stringify(responseC.data.employees) + JSON.stringify(responseD.data.employees);
-        const traditionalBytesCount = Buffer.byteLength(traditionalPayload, 'utf8');
+        // Traditional Centralized Payload Estimation:
+        // A coordinator would request raw rows from each site. Each employee row realistically contains:
+        // { "id": "EMP-001", "name": "Nguyen Van A", "role": "Engineer", "salary": 120000 }
+        // Breakdown: ~70 bytes average field content + ~10 bytes JSON structural overhead (braces, quotes, colons)
+        // = 80 bytes per record. This is a conservative upper estimate to fairly represent the traditional approach.
+        const AVG_RECORD_BYTES = 80; // 70 bytes avg field content + ~10 bytes JSON structural overhead
+        // Coordinator pulls from B, C, D (not A since A is the coordinator itself)
+        const remoteEmpCount = responseB.data.employeeCount + responseC.data.employeeCount + responseD.data.employeeCount;
+        const traditionalBytesCount = remoteEmpCount * AVG_RECORD_BYTES;
 
         // SMPC Secure Sum: only transfers 1 accumulated number + uuid + employeeCount per hop (4 hops total)
         // Dynamically compute the size using a real generated UUID and a random 10-digit number to avoid hardcoding
@@ -262,19 +278,23 @@ app.get("/benchmark", async (req, res) => {
             metrics: {
                 totalEmployees: empCount,
                 traditionalCentralized: {
-                    description: "Coordinator pulls all raw database rows from B, C, D via API",
-                    networkHops: 6, // 3 requests + 3 responses
+                    description: "Coordinator pulls all raw database rows from B, C, D via API (3 remote sites)",
+                    networkHops: 6, // 3 requests + 3 responses (parallel)
                     bytesTransferred: traditionalBytesCount,
-                    securityRisk: "HIGH - Raw employee payroll details exposed on network and coordinator server"
+                    estimationBasis: `${remoteEmpCount} remote employees × ${AVG_RECORD_BYTES} bytes/record (realistic JSON schema estimate)`,
+                    securityRisk: "HIGH - Raw employee payroll details exposed on network and coordinator server",
+                    latencyProfile: "Lower latency (parallel requests)"
                 },
                 smpcSecureSum: {
                     description: "Sequential local aggregation + random mask ring (A -> B -> C -> D -> A)",
-                    networkHops: 8, // 4 requests + 4 responses (nested synchronous roundtrips)
+                    networkHops: 8, // 4 requests + 4 responses (nested synchronous chain)
                     bytesTransferred: smpcBytesCount,
-                    securityRisk: "ZERO - Local details aggregated at nodes, only masked sums transmitted"
+                    securityRisk: "ZERO - Local details aggregated at nodes, only masked partial sums transmitted",
+                    latencyProfile: "Higher latency (sequential chain); trade-off accepted for privacy guarantee"
                 }
             },
-            networkPayloadReduction: (traditionalBytesCount / smpcBytesCount).toFixed(2) + "x improvement in network payload size (scales O(1) compared to O(N) database rows)"
+            networkPayloadReduction: (traditionalBytesCount / smpcBytesCount).toFixed(2) + "x improvement in network payload size (scales O(1) vs O(N) database rows)",
+            note: "Bandwidth reduction is the primary SMPC metric. Latency trade-off (sequential vs parallel) is an accepted cost of the privacy-preserving protocol design."
         });
     } catch (error) {
         res.status(500).json({
@@ -301,13 +321,17 @@ app.get("/collusion-demo", async (req, res) => {
 
         const partialSum = salary + randomMask;
 
+        // Generate a valid signature for the collusion-demo trigger
+        const signature = signPayload(transactionId, partialSum, count);
+
         // Send to Site B (which propagates along the ring to C, D, A)
         await axios.post(
             `${SITE_B}/secure-sum`,
             {
                 transactionId,
                 partialSum,
-                employeeCount: count
+                employeeCount: count,
+                signature
             },
             {
                 timeout: 3000
