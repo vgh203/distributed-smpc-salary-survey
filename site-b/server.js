@@ -30,6 +30,7 @@ app.get("/info", (req, res) => {
 // Raw employee records are NEVER exposed over the network boundary.
 app.get("/local-summary", (req, res) => {
     try {
+        // [TỰ TRỊ CỤC BỘ - CSDLPT]: Đọc tệp dữ liệu phân mảnh ngang salary.json riêng biệt tại đĩa cứng vật lý
         const salaryData = JSON.parse(
             fs.readFileSync(
                 path.join(__dirname, "data", "salary.json"),
@@ -81,7 +82,8 @@ app.post("/secure-sum", async (req, res) => {
             });
         }
 
-        // HMAC-SHA256 Integrity Check: reject tampered packets before processing.
+        // [XÁC THỰC HMAC - KIỂM SOÁT DỮ LIỆU]: Kiểm tra tính toàn vẹn gói tin ngay tại cửa ngõ vào của nút trung gian
+        // Nếu chữ ký HMAC bị lệch do hacker can thiệp sửa đổi tiền, lập tức chặn gói tin và hủy giao dịch (HTTP 401)
         // If the Hacker Proxy modified partialSum, the signature will not match —
         // the tampered packet is blocked here and never enters the ring computation.
         if (!verifyPayload(transactionId, partialSum, employeeCount, signature)) {
@@ -95,6 +97,7 @@ app.post("/secure-sum", async (req, res) => {
             });
         }
 
+        // [TỰ TRỊ CỤC BỘ - CSDLPT]: Đọc tệp dữ liệu phân mảnh ngang salary.json riêng biệt tại đĩa cứng vật lý
         const salaryData = JSON.parse(
             fs.readFileSync(
                 path.join(__dirname, "data", "salary.json"),
@@ -102,7 +105,8 @@ app.post("/secure-sum", async (req, res) => {
             )
         );
 
-        // Local aggregation before MPC calculation
+        // [LOCAL AGGREGATION & SECURE SUM CHẶNG TRUNG GIAN]:
+        // Cộng tổng lương cục bộ của nút vào tổng lũy kế nhận được từ chặng trước
         const localSalary = salaryData.employees.reduce((sum, emp) => sum + emp.salary, 0);
         const localCount = salaryData.employees.length;
         const newSum = partialSum + localSalary;

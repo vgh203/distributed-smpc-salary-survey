@@ -70,23 +70,26 @@ app.get("/local-summary", (req, res) => {
 app.get("/start-secure-sum", async (req, res) => {
     let transactionId = null;
     try {
+        // [BẢN ĐỊA HÓA TRUY VẤN - CSDLPT]: Đọc và xử lý dữ liệu trực tiếp tại phân mảnh vật lý của Site A (không gửi dữ liệu thô đi)
         const salaryData = JSON.parse(
             fs.readFileSync(
                 path.join(__dirname, "data", "salary.json"),
                 "utf8"
             )
         );
-        // Local Aggregation (Distributed DB Principle): Compute total salary locally
+        // [LOCAL AGGREGATION]: Tính tổng lương cục bộ của riêng Site A (Phòng IT) trước khi chuyển tiếp gói tin
         const salary = salaryData.employees.reduce((sum, emp) => sum + emp.salary, 0);
         const count = salaryData.employees.length;
 
-        // Generate a 10-digit cryptographically secure random mask (R)
-        // using Node's crypto module (range: 1,000,000,000 to 9,999,999,999)
+        // [MÃ HÓA BẢO MẬT ĐA BÊN - SMPC]: Sinh số ngẫu nhiên mặt nạ R lớn (10 chữ số) để che giấu tổng lương thật
         const randomMask = crypto.randomInt(1000000000, 10000000000);
+        // [QUẢN LÝ GIAO DỊCH PHÂN TÁN]: Tạo ID giao dịch duy nhất (UUID) để quản lý luồng chạy độc lập
         transactionId = crypto.randomUUID();
         
+        // [BỘ NHỚ ĐỆM RAM - BUFFER MANAGER]: Lưu trữ tạm thời cặp (UUID, R) trong RAM, tuyệt đối không ghi xuống đĩa cứng (Stable Storage)
         activeTransactions.set(transactionId, randomMask);
 
+        // [CỘNG MẶT NẠ CHE GIẤU]: Tạo tổng bán phần đầu tiên S1 = Lương_A + R gửi đi mạng vòng
         const partialSum = salary + randomMask;
 
         console.log(`[Site A] Transaction ID: ${transactionId}`);
@@ -128,8 +131,9 @@ app.get("/start-secure-sum", async (req, res) => {
         });
 
     } catch (error) {
-        // Clean up transaction mask on network failure/timeout to prevent memory leaks
+        // [XỬ LÝ CHỊU LỖI & ROLLBACK GIAO DỊCH]: Nếu phát hiện sập nút hoặc lỗi kết nối, lập tiếp hủy giao dịch
         if (transactionId && activeTransactions.has(transactionId)) {
+            // Xóa sạch khóa R khỏi bộ nhớ RAM để chống rò rỉ dữ liệu và giải phóng bộ nhớ (tránh Memory Leak)
             activeTransactions.delete(transactionId);
             console.log(`[Site A] Cleaned up failed transaction: ${transactionId}`);
         }
@@ -165,9 +169,12 @@ app.post("/final-result", (req, res) => {
     }
 
     const encryptedTotal = partialSum;
+    // [TRUY VẾT KHÓA R]: Sử dụng transactionId để lấy lại số ngẫu nhiên R đã lưu trên RAM
     const randomMask = activeTransactions.get(transactionId);
-    activeTransactions.delete(transactionId); // Clear stored state to prevent memory leaks
+    // [GIẢI PHÓNG RAM - CO COMMIT]: Xóa giao dịch khỏi RAM đệm khi đã hoàn thành
+    activeTransactions.delete(transactionId); 
 
+    // [GIẢI MÃ KHỬ NHIỄU]: Thực hiện phép trừ để thu về tổng lương thực tế chính xác của cả 4 site
     const realTotal = encryptedTotal - randomMask;
     const averageSalaryPerDept = realTotal / NUM_SITES;
     const averageSalaryPerEmp = employeeCount ? (realTotal / employeeCount) : 0;

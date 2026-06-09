@@ -22,6 +22,7 @@ app.get("/", (req, res) => {
 // Raw employee records are NEVER exposed over the network boundary.
 app.get("/local-summary", (req, res) => {
     try {
+        // [TỰ TRỊ CỤC BỘ - CSDLPT]: Đọc tệp dữ liệu phân mảnh ngang salary.json riêng biệt tại đĩa cứng vật lý
         const salaryData = JSON.parse(
             fs.readFileSync(
                 path.join(__dirname, "data", "salary.json"),
@@ -84,6 +85,7 @@ app.post("/secure-sum", async (req, res) => {
             });
         }
 
+        // [TỰ TRỊ CỤC BỘ - CSDLPT]: Đọc tệp dữ liệu phân mảnh ngang salary.json riêng biệt tại đĩa cứng vật lý
         const salaryData = JSON.parse(
             fs.readFileSync(
                 path.join(__dirname, "data", "salary.json"),
@@ -91,7 +93,8 @@ app.post("/secure-sum", async (req, res) => {
             )
         );
 
-        // Local aggregation before MPC calculation
+        // [LOCAL AGGREGATION & SECURE SUM CHẶNG TRUNG GIAN]:
+        // Cộng tổng lương cục bộ của nút vào tổng lũy kế nhận được từ chặng trước
         const localSalary = salaryData.employees.reduce((sum, emp) => sum + emp.salary, 0);
         const localCount = salaryData.employees.length;
         const finalSum = partialSum + localSalary;
