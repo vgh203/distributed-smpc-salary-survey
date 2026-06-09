@@ -8,50 +8,49 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-const PORT = 3005;
+const PORT = 3005; // Cổng hoạt động của Hacker Proxy
 
 app.get("/", (req, res) => {
-    res.send("Hacker Sniffer Proxy is active on Port 3005");
+    res.send("Hacker Sniffer Proxy đang hoạt động trên Port 3005");
 });
 
 app.post("/secure-sum", async (req, res) => {
     const { transactionId, partialSum, employeeCount } = req.body;
     const shouldTamper = req.query.tamper === "true" || req.body.tamper === true;
     
-    console.log("\n\x1b[41m\x1b[37m=================== HACKER INTERCEPTED PACKET ===================\x1b[0m");
-    console.log(`\x1b[31m[!] ALERT:\x1b[0m Intercepted data packet on the wire between Site A and Site B!`);
-    console.log(`\x1b[31m[!] Transaction ID:\x1b[0m ${transactionId}`);
-    console.log(`\x1b[31m[RAW PAYLOAD]:\x1b[0m`, req.body);
+    console.log("\n\x1b[41m\x1b[37m=================== HACKER ĐÁNH CHẶN GÓI TIN ===================\x1b[0m");
+    console.log(`\x1b[31m[!] CẢNH BÁO:\x1b[0m Đã đánh chặn được gói tin dữ liệu trên đường truyền mạng giữa Site A và Site B!`);
+    console.log(`\x1b[31m[!] Mã giao dịch (Transaction ID):\x1b[0m ${transactionId}`);
+    console.log(`\x1b[31m[DỮ LIỆU THU ĐƯỢC]:\x1b[0m`, req.body);
     
     let forwardedSum = partialSum;
     if (shouldTamper) {
-        forwardedSum = partialSum + 999999;
-        console.log(`\x1b[31m[!] ACTIVE ATTACK (MitM Tampering):\x1b[0m Injecting false data into payload!`);
-        console.log(`    Modifying partialSum from ${partialSum} to ${forwardedSum}`);
-        console.log(`\x1b[33m[!] HMAC NOTE:\x1b[0m Hacker does NOT have the shared secret key.`);
-        console.log(`    The tampered packet will have an invalid/missing signature.`);
-        console.log(`    Site B will reject this packet with HTTP 401 INTEGRITY VIOLATION.`);
+        forwardedSum = partialSum + 999999; // Cố tình sửa đổi giá trị số tiền lũy kế (Tấn công chủ động - Active Tampering)
+        console.log(`\x1b[31m[!] TẤN CÔNG CHỦ ĐỘNG (Sửa đổi dữ liệu):\x1b[0m Đang tiêm số tiền giả vào gói tin!`);
+        console.log(`    Thay đổi giá trị partialSum từ ${partialSum} thành ${forwardedSum}`);
+        console.log(`\x1b[33m[!] LƯU Ý VỀ HMAC:\x1b[0m Hacker không có khóa bí mật chung.`);
+        console.log(`    Gói tin bị sửa đổi sẽ có chữ ký không hợp lệ/thiếu chữ ký.`);
+        console.log(`    Site B chắc chắn sẽ chặn đứng gói tin này với lỗi HTTP 401.`);
     } else {
-        console.log(`\x1b[33m[MATHEMATICAL ANALYSIS]:\x1b[0m`);
-        console.log(`   Equation caught: partialSum = Salary_A + R`);
-        console.log(`   Equation values: ${partialSum} = Salary_A + R`);
-        console.log(`   Problem: Since R is a cryptographically secure 10-digit random mask generated in RAM`);
-        console.log(`            and known ONLY to Site A, the equation has 1 equation but 2 unknown variables.`);
-        console.log(`            It has INFINITE mathematical solutions!`);
-        console.log(`\x1b[36m   Examples of possible solutions:\x1b[0m`);
-        console.log(`     - If R = 1,234,567,890  => Salary_A = ${partialSum - 1234567890}`);
-        console.log(`     - If R = 5,555,555,555  => Salary_A = ${partialSum - 5555555555}`);
-        console.log(`     - If R = 9,876,543,210  => Salary_A = ${partialSum - 9876543210}`);
-        console.log(`\x1b[32m[SECURITY STATUS]:\x1b[0m Privacy preserved. Site A's true salary cannot be inferred from intercepted packets.`);
+        console.log(`\x1b[33m[PHÂN TÍCH TOÁN HỌC TRỘN NHIỄU (Passive Sniffing)]:\x1b[0m`);
+        console.log(`   Phương trình thu được: partialSum = Lương_A + R`);
+        console.log(`   Giá trị cụ thể: ${partialSum} = Lương_A + R`);
+        console.log(`   Giải thích: R là số ngẫu nhiên 10 chữ số sinh từ RAM và chỉ có Site A biết.`);
+        console.log(`               Phương trình có 1 phương trình nhưng tới 2 ẩn số.`);
+        console.log(`               Do đó, có vô số nghiệm thỏa mãn phương trình này!`);
+        console.log(`\x1b[36m   Ví dụ các khả năng lương thật của A có thể là:\x1b[0m`);
+        console.log(`     - Nếu R = 1,234,567,890  => Lương_A = ${partialSum - 1234567890}`);
+        console.log(`     - If R = 5,555,555,555  => Lương_A = ${partialSum - 5555555555}`);
+        console.log(`     - If R = 9,876,543,210  => Lương_A = ${partialSum - 9876543210}`);
+        console.log(`\x1b[32m[TRẠNG THÁI BẢO MẬT]:\x1b[0m Quyền riêng tư được bảo vệ. Hacker không thể giải mã lương Site A.`);
     }
     console.log("\x1b[41m\x1b[37m=================================================================\x1b[0m\n");
 
     try {
-        // Forward the packet (possibly tampered) to Site B.
-        // In tamper mode: signature is intentionally OMITTED to simulate an attacker
-        // who cannot forge a valid HMAC without knowing the shared secret key.
+        // Chuyển tiếp gói tin (đã bị sửa đổi hoặc giữ nguyên) tới Site B
+        // Nếu ở chế độ tamper: cố tình lược bỏ chữ ký signature để mô phỏng hacker không biết khóa ký
         const forwardBody = shouldTamper
-            ? { transactionId, partialSum: forwardedSum, employeeCount } // No signature — HMAC will fail at Site B
+            ? { transactionId, partialSum: forwardedSum, employeeCount }
             : { transactionId, partialSum: forwardedSum, employeeCount, ...req.body.signature ? { signature: req.body.signature } : {} };
 
         const response = await axios.post(
@@ -63,13 +62,13 @@ app.post("/secure-sum", async (req, res) => {
         );
         res.json(response.data);
     } catch (error) {
-        console.error(`\x1b[31m[Hacker Error]:\x1b[0m Failed to forward packet to Site B. Is Site B running?`);
+        console.error(`\x1b[31m[Lỗi Hacker]:\x1b[0m Không chuyển tiếp được gói tin tới Site B. Site B có đang chạy không?`);
         if (error.response && error.response.data) {
             res.status(error.response.status).json(error.response.data);
         } else if (error.code === "ECONNREFUSED" || error.code === "ETIMEDOUT") {
             res.status(502).json({
                 success: false,
-                failedNode: "Site B (Port 3002)",
+                failedNode: "Site B (Cổng 3002)",
                 message: "Hacker Proxy kết nối đến Site B thất bại hoặc hết thời gian chờ. Nút mạng có thể đã bị sập."
             });
         } else {
@@ -81,8 +80,6 @@ app.post("/secure-sum", async (req, res) => {
     }
 });
 
-// Hacker Proxy is running by default to facilitate seamless on-stage demo transitions 
-// between normal and hacker mode (?hacker=true) without manual process restarts.
 app.listen(PORT, () => {
-    console.log(`Hacker Sniffer Proxy running on port ${PORT} (Intentional daemon for demo convenience)`);
+    console.log(`Hacker Sniffer Proxy đang hoạt động trên port ${PORT}`);
 });

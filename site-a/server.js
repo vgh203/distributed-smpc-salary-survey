@@ -11,19 +11,20 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-const PORT = 3001;
+const PORT = 3001; // Cổng chạy của Site A (Phòng ban điều phối)
 
-// Use a Map to store random masks for active transactions to prevent race conditions
+// Sử dụng Map để lưu trữ tạm thời số ngẫu nhiên R trên RAM theo từng transactionId (Chống Race Condition)
 const activeTransactions = new Map();
 
 app.get("/", (req, res) => {
-    res.send("Site A is running");
+    res.send("Site A đang hoạt động bình thường");
 });
 
 app.listen(PORT, () => {
-    console.log(`Site A running on port ${PORT}`);
+    console.log(`Site A đang chạy trên port ${PORT}`);
 });
 
+// Endpoint kiểm tra kết nối cục bộ giữa Site A và Site B
 app.get("/test-site-b", async (req, res) => {
     try {
         const response = await axios.get(`${SITE_B}/info`);
@@ -39,9 +40,8 @@ app.get("/test-site-b", async (req, res) => {
     }
 });
 
-// GET /local-summary — Shared-Nothing Compliance: returns ONLY aggregated stats.
-// Raw employee records are NEVER exposed over the network, even to the /verify auditor.
-// This endpoint is the boundary between local private data and the shared ring protocol.
+// GET /local-summary — Tuân thủ kiến trúc Shared-Nothing: chỉ trả ra số liệu tổng hợp cục bộ.
+// Tuyệt đối không bao giờ truyền gửi bản ghi lương chi tiết của nhân viên qua mạng.
 app.get("/local-summary", (req, res) => {
     try {
         const salaryData = JSON.parse(
@@ -56,8 +56,7 @@ app.get("/local-summary", (req, res) => {
             department: salaryData.department,
             localSum: localSum,
             employeeCount: salaryData.employees.length
-            // employees[] intentionally omitted — Shared-Nothing Architecture principle.
-            // No raw payroll records cross the network boundary.
+            // Mảng employees[] cố tình bị lược bỏ để bảo vệ tính tự trị và riêng tư của dữ liệu cục bộ.
         });
     } catch (error) {
         res.status(500).json({
@@ -67,6 +66,7 @@ app.get("/local-summary", (req, res) => {
     }
 });
 
+// GET /start-secure-sum - Khởi trị tiến trình tính tổng lương bảo mật đa bên phân tán (SMPC)
 app.get("/start-secure-sum", async (req, res) => {
     let transactionId = null;
     try {
@@ -93,8 +93,8 @@ app.get("/start-secure-sum", async (req, res) => {
         const partialSum = salary + randomMask;
 
         console.log(`[Site A] Transaction ID: ${transactionId}`);
-        console.log(`[Site A] Random Mask (R): [HIDDEN - stored in RAM only]`);
-        console.log(`[Site A] Partial Sum (S1): ${partialSum}`);
+        console.log(`[Site A] Số ngẫu nhiên mặt nạ R: [ẨN - Chỉ lưu trên RAM đệm]`);
+        console.log(`[Site A] Tổng bán phần khởi đầu (S1): ${partialSum}`);
 
         const useHackerMode = req.query.hacker === "true";
         const useTamperMode = req.query.tamper === "true";
@@ -102,11 +102,11 @@ app.get("/start-secure-sum", async (req, res) => {
             ? `${HACKER_PROXY}/secure-sum?tamper=${useTamperMode}` 
             : `${SITE_B}/secure-sum`;
 
-        // Sign the outgoing payload with HMAC-SHA256 for per-hop integrity verification
+        // Ký chữ ký số HMAC-SHA256 lên gói tin đi chặng đầu tiên để bảo vệ tính toàn vẹn
         const signature = signPayload(transactionId, partialSum, count);
 
         console.log(
-            `[Site A] Send To ${useHackerMode ? "Hacker Proxy (Port 3005)" : "Site B (Port 3002)"}:`,
+            `[Site A] Gửi gói tin đi đến ${useHackerMode ? "Hacker Proxy (Cổng 3005)" : "Site B (Cổng 3002)"}:`,
             { transactionId, partialSum, employeeCount: count }
         );
 
@@ -120,7 +120,7 @@ app.get("/start-secure-sum", async (req, res) => {
                 signature
             },
             {
-                timeout: 3000
+                timeout: 3000 // Giới hạn thời gian chờ phản hồi 3 giây để phát hiện sập nút
             }
         );
 
@@ -135,19 +135,19 @@ app.get("/start-secure-sum", async (req, res) => {
         if (transactionId && activeTransactions.has(transactionId)) {
             // Xóa sạch khóa R khỏi bộ nhớ RAM để chống rò rỉ dữ liệu và giải phóng bộ nhớ (tránh Memory Leak)
             activeTransactions.delete(transactionId);
-            console.log(`[Site A] Cleaned up failed transaction: ${transactionId}`);
+            console.log(`[Site A] Đã dọn dẹp và hủy giao dịch lỗi: ${transactionId}`);
         }
 
         if (error.response && error.response.data) {
             res.status(error.response.status).json(error.response.data);
         } else if (error.code === "ECONNREFUSED" || error.code === "ETIMEDOUT") {
             const nextNode = req.query.hacker === "true" 
-                ? "Hacker Proxy (Port 3005)" 
-                : "Site B (Port 3002)";
+                ? "Hacker Proxy (Cổng 3005)" 
+                : "Site B (Cổng 3002)";
             res.status(502).json({
                 success: false,
                 failedNode: nextNode,
-                message: `Kết nối đến ${nextNode} thất bại hoặc hết thời gian chờ. Nút mạng có thể đã bị sập.`
+                message: `Kết nối đến ${nextNode} thất bại hoặc quá thời gian chờ. Nút mạng có thể đã bị sập.`
             });
         } else {
             res.status(500).json({
@@ -158,6 +158,7 @@ app.get("/start-secure-sum", async (req, res) => {
     }
 });
 
+// POST /final-result - Endpoint chặng cuối cùng nhận kết quả tuần hoàn về để giải mã
 app.post("/final-result", (req, res) => {
     const { transactionId, partialSum, employeeCount } = req.body;
 
@@ -179,42 +180,37 @@ app.post("/final-result", (req, res) => {
     const averageSalaryPerDept = realTotal / NUM_SITES;
     const averageSalaryPerEmp = employeeCount ? (realTotal / employeeCount) : 0;
 
-    console.log(`[Site A] Finalizing transaction ${transactionId}`);
-    console.log(`[Site A] Encrypted Total from Ring: ${encryptedTotal}`);
-    console.log(`[Site A] Recovered Random Mask (R): [HIDDEN - used to decrypt]`);
-    console.log(`[Site A] Final Sum: ${realTotal}`);
-    console.log(`[Site A] Average Salary Per Department: ${averageSalaryPerDept}`);
-    console.log(`[Site A] Average Salary Per Employee: ${averageSalaryPerEmp} (Calculated from ${employeeCount} employees)`);
+    console.log(`[Site A] Hoàn tất và giải mã giao dịch ${transactionId}`);
+    console.log(`[Site A] Tổng nhận được bị che phủ từ vòng truyền tin: ${encryptedTotal}`);
+    console.log(`[Site A] Tổng thực tế sau khi giải mã: ${realTotal}`);
+    console.log(`[Site A] Trung bình lương mỗi phòng ban: ${averageSalaryPerDept}`);
+    console.log(`[Site A] Trung bình lương mỗi nhân viên: ${averageSalaryPerEmp}`);
 
     res.json({
         globalSum: realTotal,
-        globalAverage: averageSalaryPerDept, // backward compatibility
+        globalAverage: averageSalaryPerDept,
         averageSalaryPerDepartment: averageSalaryPerDept,
         averageSalaryPerEmployee: averageSalaryPerEmp,
         totalEmployees: employeeCount
     });
 });
 
-// Verification endpoint: returns dynamic ground truth sum and average by calling other nodes via HTTP
-// (simulating a Trusted External Auditor) to verify mathematical correctness dynamically.
+// GET /verify - Endpoint mô phỏng Kiểm toán viên độc lập (Auditor) đối chiếu chéo số liệu thực tế qua HTTP
 app.get("/verify", async (req, res) => {
     try {
-        // Read local Site A data directly
         const dbA = JSON.parse(fs.readFileSync(path.join(__dirname, "data", "salary.json"), "utf8"));
         const salaryA = dbA.employees.reduce((sum, emp) => sum + emp.salary, 0);
         const countA = dbA.employees.length;
 
-        // Fetch from other sites via HTTP to preserve Data Autonomy (Shared-Nothing principle)
+        // Gọi HTTP API lấy số liệu tổng hợp cục bộ để bảo vệ tính tự trị cục bộ của dữ liệu
         const responseB = await axios.get(`${SITE_B}/local-summary`);
         const responseC = await axios.get(`${SITE_C}/local-summary`);
         const responseD = await axios.get(`${SITE_D}/local-summary`);
 
         const salaryB = responseB.data.localSum;
         const countB = responseB.data.employeeCount;
-
         const salaryC = responseC.data.localSum;
         const countC = responseC.data.employeeCount;
-
         const salaryD = responseD.data.localSum;
         const countD = responseD.data.employeeCount;
 
@@ -223,53 +219,44 @@ app.get("/verify", async (req, res) => {
         const groundTruthAverageDept = groundTruthSum / NUM_SITES;
         const groundTruthAverageEmp = groundTruthSum / totalEmployeesCount;
 
-        console.log(`[Site A] GET /verify -> Ground Truth Sum: ${groundTruthSum} | Diff: 0 (Correctness Verified!)`);
+        console.log(`[Site A] Kiểm toán -> Tổng lương thực tế: ${groundTruthSum} | Sai lệch với Secure Sum: 0`);
 
         res.json({
             success: true,
-            description: "Dynamic Centralized Ground Truth Verification (Trusted Auditor Simulation)",
+            description: "Đối chiếu chéo số liệu thực tế bằng thực nghiệm kiểm toán chặng (Trusted Auditor Simulation)",
             groundTruthSum,
-            groundTruthAverage: groundTruthAverageDept, // backward compatibility
+            groundTruthAverage: groundTruthAverageDept,
             groundTruthAveragePerDepartment: groundTruthAverageDept,
             groundTruthAveragePerEmployee: groundTruthAverageEmp,
             totalEmployees: totalEmployeesCount,
-            note: "This endpoint acts as an external Trusted Auditor. It queries each site's HTTP endpoint (GET /local-summary) to pull aggregated local data rather than accessing filesystem files directly, preserving local autonomy."
+            note: "Endpoint này mô phỏng bên kiểm toán độc lập. Nó truy xuất dữ liệu tổng hợp qua API HTTP cục bộ chứ không đọc file vật lý chéo, giữ vững tính tự trị."
         });
     } catch (error) {
         res.status(500).json({
             success: false,
-            message: "Lỗi đọc file đối chiếu qua HTTP API: " + error.message
+            message: "Lỗi thực thi đối chiếu qua API: " + error.message
         });
     }
 });
 
-// Quantitative Metric Endpoint: compares network hops and payload bytes between SMPC and Traditional.
-// Shared-Nothing compliance: Traditional payload size is ESTIMATED using realistic schema per employee,
-// NOT by pulling actual employee records from remote sites (which would violate privacy).
+// GET /benchmark - Phân tích so sánh hiệu năng thực tế mạng và dung lượng payload giữa SMPC và Tập trung
 app.get("/benchmark", async (req, res) => {
     try {
         const dbA = JSON.parse(fs.readFileSync(path.join(__dirname, "data", "salary.json"), "utf8"));
         const countA = dbA.employees.length;
 
-        // Fetch aggregated stats only from other sites (no raw records exposed)
         const responseB = await axios.get(`${SITE_B}/local-summary`);
         const responseC = await axios.get(`${SITE_C}/local-summary`);
         const responseD = await axios.get(`${SITE_D}/local-summary`);
 
         const empCount = countA + responseB.data.employeeCount + responseC.data.employeeCount + responseD.data.employeeCount;
 
-        // Traditional Centralized Payload Estimation:
-        // A coordinator would request raw rows from each site. Each employee row realistically contains:
-        // { "id": "EMP-001", "name": "Nguyen Van A", "role": "Engineer", "salary": 120000 }
-        // Breakdown: ~70 bytes average field content + ~10 bytes JSON structural overhead (braces, quotes, colons)
-        // = 80 bytes per record. This is a conservative upper estimate to fairly represent the traditional approach.
-        const AVG_RECORD_BYTES = 80; // 70 bytes avg field content + ~10 bytes JSON structural overhead
-        // Coordinator pulls from B, C, D (not A since A is the coordinator itself)
+        // Ước lượng chi phí truyền tải truyền thống: Nếu gửi dữ liệu thô (mỗi bản ghi ~80 bytes)
+        const AVG_RECORD_BYTES = 80; 
         const remoteEmpCount = responseB.data.employeeCount + responseC.data.employeeCount + responseD.data.employeeCount;
         const traditionalBytesCount = remoteEmpCount * AVG_RECORD_BYTES;
 
-        // SMPC Secure Sum: only transfers 1 accumulated number + uuid + employeeCount per hop (4 hops total)
-        // Dynamically compute the size using a real generated UUID and a random 10-digit number to avoid hardcoding
+        // SMPC Secure Sum: Chỉ truyền gửi cấu trúc gói tin cố định (gồm uuid + partialSum + employeeCount) qua 4 chặng
         const sampleTxId = crypto.randomUUID();
         const samplePartialSum = crypto.randomInt(1000000000, 10000000000);
         const smpcPayloadObj = {
@@ -278,60 +265,55 @@ app.get("/benchmark", async (req, res) => {
             employeeCount: empCount
         };
         const smpcPayloadStr = JSON.stringify(smpcPayloadObj);
-        const smpcBytesCount = Buffer.byteLength(smpcPayloadStr, 'utf8') * 4; // 4 hops
+        const smpcBytesCount = Buffer.byteLength(smpcPayloadStr, 'utf8') * 4; // 4 chặng truyền tin
 
         res.json({
             success: true,
             metrics: {
                 totalEmployees: empCount,
                 traditionalCentralized: {
-                    description: "Coordinator pulls all raw database rows from B, C, D via API (3 remote sites)",
-                    networkHops: 6, // 3 requests + 3 responses (parallel)
+                    description: "Mô hình tập trung: Kéo toàn bộ dữ liệu thô từ B, C, D về điều phối qua API",
+                    networkHops: 6, // 3 yêu cầu gửi + 3 yêu cầu phản hồi song song
                     bytesTransferred: traditionalBytesCount,
-                    estimationBasis: `${remoteEmpCount} remote employees × ${AVG_RECORD_BYTES} bytes/record (realistic JSON schema estimate)`,
-                    securityRisk: "HIGH - Raw employee payroll details exposed on network and coordinator server",
-                    latencyProfile: "Lower latency (parallel requests)"
+                    estimationBasis: `${remoteEmpCount} nhân viên × ${AVG_RECORD_BYTES} bytes/bản ghi`,
+                    securityRisk: "CAO - Dữ liệu bảng lương thô bị lộ trên đường truyền mạng và máy chủ tập trung",
+                    latencyProfile: "Độ trễ thấp hơn (nhờ gọi song song)"
                 },
                 smpcSecureSum: {
-                    description: "Sequential local aggregation + random mask ring (A -> B -> C -> D -> A)",
-                    networkHops: 8, // 4 requests + 4 responses (nested synchronous chain)
+                    description: "Mô hình phân tán bảo mật: Cộng dồn cục bộ + mạng vòng một chiều (A -> B -> C -> D -> A)",
+                    networkHops: 8, // 4 yêu cầu gửi + 4 yêu cầu phản hồi tuần tự
                     bytesTransferred: smpcBytesCount,
-                    securityRisk: "ZERO - Local details aggregated at nodes, only masked partial sums transmitted",
-                    latencyProfile: "Higher latency (sequential chain); trade-off accepted for privacy guarantee"
+                    securityRisk: "KHÔNG CÓ RỦI RO - Chỉ số tổng đã được che phủ được truyền đi, ẩn hoàn toàn lương thô",
+                    latencyProfile: "Độ trễ cao hơn (do truyền mạng tuần tự vòng tròn); đánh đổi chấp nhận để có bảo mật"
                 }
             },
-            networkPayloadReduction: (traditionalBytesCount / smpcBytesCount).toFixed(2) + "x improvement in network payload size (scales O(1) vs O(N) database rows)",
-            note: "Bandwidth reduction is the primary SMPC metric. Latency trade-off (sequential vs parallel) is an accepted cost of the privacy-preserving protocol design."
+            networkPayloadReduction: (traditionalBytesCount / smpcBytesCount).toFixed(2) + "x dung lượng mạng được tối ưu (băng thông đạt O(1) so với độ phình O(N) của dữ liệu thô)",
+            note: "Tiết kiệm băng thông và bảo mật là chỉ số đo lường chính. Đánh đổi độ trễ mạng vòng là chấp nhận được để lấy an toàn thông tin."
         });
     } catch (error) {
         res.status(500).json({
             success: false,
-            message: "Lỗi chạy benchmark qua HTTP: " + error.message
+            message: "Lỗi chạy benchmark mạng: " + error.message
         });
     }
 });
 
-// Collusion Attack Demonstration Endpoint
+// GET /collusion-demo - Giả lập kịch bản tấn công thông đồng (Collusion Attack) giữa hai site lân cận B và D
 app.get("/collusion-demo", async (req, res) => {
     let transactionId = null;
     try {
-        const salaryData = JSON.parse(
-            fs.readFileSync(path.join(__dirname, "data", "salary.json"), "utf8")
-        );
+        const salaryData = JSON.parse(fs.readFileSync(path.join(__dirname, "data", "salary.json"), "utf8"));
         const salary = salaryData.employees.reduce((sum, emp) => sum + emp.salary, 0);
         const count = salaryData.employees.length;
 
-        // Run a sample secure-sum transaction
         const randomMask = crypto.randomInt(1000000000, 10000000000);
         transactionId = crypto.randomUUID();
         activeTransactions.set(transactionId, randomMask);
 
         const partialSum = salary + randomMask;
-
-        // Generate a valid signature for the collusion-demo trigger
         const signature = signPayload(transactionId, partialSum, count);
 
-        // Send to Site B (which propagates along the ring to C, D, A)
+        // Kích hoạt một chu trình chạy Secure Sum
         await axios.post(
             `${SITE_B}/secure-sum`,
             {
@@ -345,21 +327,20 @@ app.get("/collusion-demo", async (req, res) => {
             }
         );
 
-        // Fetch transaction variables from Site B and Site D
+        // Hai site lân cận B và D chia sẻ dữ liệu trung gian cho nhau
         const responseB = await axios.get(`${SITE_B}/last-transaction`);
         const responseD = await axios.get(`${SITE_D}/last-transaction`);
 
-        const outgoing_B = responseB.data.outgoing; // S2 = X_A + X_B + R
-        const incoming_D = responseD.data.incoming; // S3 = X_A + X_B + X_C + R
+        const outgoing_B = responseB.data.outgoing; // Gói tin B chuyển đi: S2 = Lương_A + Lương_B + R
+        const incoming_D = responseD.data.incoming; // Gói tin D nhận về: S3 = Lương_A + Lương_B + Lương_C + R
 
         if (!outgoing_B || !incoming_D) {
             throw new Error("Không truy xuất được dữ liệu giao dịch từ Site B hoặc Site D.");
         }
 
-        // Extracted value of C: S3 - S2 = (X_A + X_B + X_C + R) - (X_A + X_B + R) = X_C
+        // Tấn công thông đồng tính toán lương của Site C: S3 - S2 = Lương_C
         const extractedSalaryC = incoming_D - outgoing_B;
 
-        // Verify with actual Site C salary (via HTTP API)
         const responseC = await axios.get(`${SITE_C}/local-summary`);
         const actualSalaryC = responseC.data.localSum;
 
@@ -367,20 +348,20 @@ app.get("/collusion-demo", async (req, res) => {
 
         res.json({
             success: true,
-            description: "Collusion Attack Simulation (Neighbour Nodes Colluding)",
+            description: "Giả lập tấn công thông đồng (Hai nút mạng lân cận bắt tay chia sẻ dữ liệu)",
             transactionId,
             colludingNodes: {
                 siteB: {
-                    role: "Left Neighbour of Site C (Finance)",
+                    role: "Nút lân cận bên trái của Site C (Phòng Tài chính)",
                     outgoingSumSentToC: outgoing_B
                 },
                 siteD: {
-                    role: "Right Neighbour of Site C (Finance)",
+                    role: "Nút lân cận bên phải của Site C (Phòng Tài chính)",
                     incomingSumReceivedFromC: incoming_D
                 }
             },
             attackLogic: {
-                formula: "Extracted_Salary_C = incoming_D_sum - outgoing_B_sum",
+                formula: "Lương_C_Bị_Đánh_Cắp = Tổng_Nhận_D - Tổng_Gửi_B",
                 calculation: `${incoming_D} - ${outgoing_B} = ${extractedSalaryC}`,
                 extractedSalaryC
             },
@@ -389,9 +370,9 @@ app.get("/collusion-demo", async (req, res) => {
                 match
             },
             assessment: match 
-                ? "SUCCESSFUL COLLUSION - Site B and Site D pooled their inputs/outputs to successfully steal Site C's private total salary!" 
-                : "FAILED COLLUSION",
-            recommendation: "To mitigate collusion in ring topologies: 1) Dynamically randomize routing path per session, 2) Use Shamir's Secret Sharing, 3) Adopt Homomorphic Encryption."
+                ? "TẤN CÔNG THÔNG ĐỒNG THÀNH CÔNG - Site B và Site D đã hợp tác và tính ra chính xác lương tổng của Site C!" 
+                : "TẤN CÔNG THẤT BẠI",
+            recommendation: "Biện pháp phòng chống: 1) Ngẫu nhiên hóa đường truyền động, 2) Sử dụng thuật toán Shamir's Secret Sharing, 3) Áp dụng mã hóa đồng cấu."
         });
 
     } catch (error) {
@@ -400,7 +381,7 @@ app.get("/collusion-demo", async (req, res) => {
         }
         res.status(500).json({
             success: false,
-            message: "Lỗi chạy kịch bản tấn công thông đồng: " + error.message
+            message: "Lỗi chạy giả lập tấn công thông đồng: " + error.message
         });
     }
 });
